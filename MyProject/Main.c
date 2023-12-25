@@ -33,10 +33,10 @@ typedef struct box // Main struct for everything
 
 }box;
 
-box background; // box that represents the background for the entire window
-box play_area; // box that describes the play area casted within the window
-box unit; // snake unit
-box food; // Food for snake
+ box background; // box that represents the background for the entire window
+ box play_area; // box that describes the play area casted within the window
+ box unit; // snake unit
+ box food; // Food for snake
 typedef struct body //struct that will contain a body
 {
     float exists; // this field determines if that part of the snakes body actually exists
@@ -58,7 +58,7 @@ typedef struct node
 
 
 // step 1 create a pointer to our node
-//node* snake_node = NULL;
+node* snake_node = NULL;
 
 
 //struct body snake_body[SNAKE_SIZE_CAP]; // we create a snake body comprised of body parts which are themselves a simple snake unit
@@ -139,30 +139,29 @@ void setup() {
 
 
     ////create a temp node to get our first address
-    //node *temp = malloc(sizeof(node));
+    node *temp = malloc(sizeof(node));
 
-    //if (temp = NULL) // error handling to ensure we get memory for our temporary node
-    //{
-    //    fprintf(stderr, "Error allocating memory");
-    //    return(1);
-    //}
+    if (temp == NULL) // error handling to ensure we get memory for our temporary node
+    {
+        fprintf(stderr, "Error allocating memory");
+        return(1);
+    }
 
-    //temp->next = NULL;
+    temp->next = NULL;
 
-    //snake_node = temp;
 
-    ////now need to free temp
+    snake_node = temp;
 
-    //free(temp);
+    //now need to free temp
 
-    // set snake_node to point to null
+    free(temp);
 
     //Defines the beginning of the snake body by defining the head first
-//snake_node->snake_body.x = unit.x;
-//snake_node->snake_body.y = unit.y;
-//snake_node->snake_body.width = unit.width;
-//snake_node->snake_body.height = unit.height;
-//snake_node->node_direction = direction;
+    snake_node->snake_body.x = unit.x;
+    snake_node->snake_body.y = unit.y;
+    snake_node->snake_body.width = unit.width;
+    snake_node->snake_body.height = unit.height;
+    snake_node->node_direction = direction;
 
 
 
@@ -251,12 +250,14 @@ void update()
 
     // step 1 is to move the snake head.
 
-   // flummy_x = snake_node->snake_body.x;
-    //flummy_y = snake_node->snake_body.y;
-    //flummy_direction = snake_node->node_direction;
-    //snake_node->snake_body.x = unit.x;
-    //snake_node->snake_body.y = unit.y;
-    //snake_node->node_direction = direction;
+   flummy_x = snake_node->snake_body.x;
+   flummy_y = snake_node->snake_body.y;
+   flummy_direction = snake_node->node_direction;
+   snake_node->snake_body.x = unit.x;
+   snake_node->snake_body.y = unit.y;
+   snake_node->snake_body.width = unit.width;
+   snake_node->snake_body.height = unit.height;
+   snake_node->node_direction = direction;
 
 
     //  // moves the snake head storing old position first
@@ -346,16 +347,12 @@ void update()
 
     // now we move the snake node body
 
-//dummy_direction = snake_node->node_direction;
-//dummy_x = snake_node->snake_body.x;
-//dummy_y = snake_node->snake_body.y;
-//snake_node->snake_body.x = flummy_x;
-//snake_node->snake_body.y = flummy_y;
-//snake_node->node_direction = flummy_direction;
-
-//flummy_x = dummy_x;
-//flummy_y = dummy_y;
-//flummy_direction = dummy_direction;
+    dummy_direction = snake_node->node_direction;
+    dummy_x = snake_node->snake_body.x;
+    dummy_y = snake_node->snake_body.y;
+    flummy_x = dummy_x;
+    flummy_y = dummy_y;
+    flummy_direction = dummy_direction;
 
 
 
@@ -409,11 +406,11 @@ void update()
         //}
 
        // // handles creating a new snake body
-        //if ((unit.x > food.x - food.width / 1.5 && unit.x < food.x + food.width / 1.5) && (unit.y > food.y - food.height / 1.5 && unit.y < food.y + food.height / 1.5))
-        //{
-         //   food.x = (rand() % (int)(GAME_WINDOW_WIDTH / 2)) + origin_background_x;
-          //  food.y = (rand() % (int)(GAME_WINDOW_HEIGHT / 2)) + origin_background_y;
-           // food_counter++;
+        if ((unit.x > food.x - food.width / 1.5 && unit.x < food.x + food.width / 1.5) && (unit.y > food.y - food.height / 1.5 && unit.y < food.y + food.height / 1.5))
+        {
+            food.x = (rand() % (int)(GAME_WINDOW_WIDTH / 2)) + origin_background_x;
+            food.y = (rand() % (int)(GAME_WINDOW_HEIGHT / 2)) + origin_background_y;
+            food_counter++;
            // snake_body[food_counter].exists = TRUE;
             //snake_body[food_counter].body_part.width = unit.width;
             //snake_body[food_counter].body_part.height = unit.height;
@@ -438,10 +435,10 @@ void update()
            //     snake_body[food_counter].body_part.x = flummy_x;
             //    snake_body[food_counter].body_part.y = flummy_y;
              //   break;
-            //}
+            
             //snake_body[food_counter].direction_body = flummy_direction;
 
-       // }
+        }
     //// handles collisions
       //  int m = 1;
        // while (snake_body[m].exists == TRUE)
@@ -457,7 +454,8 @@ void update()
 
 void render()
 {
-
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
     SDL_Rect background_rect =
     {
         (int)background.x,
@@ -465,7 +463,7 @@ void render()
         (int)background.width,
         (int)background.height
     };
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderFillRect(renderer, (&background_rect));
 
     // below creates background for main play area
@@ -476,31 +474,20 @@ void render()
         (int)play_area.width,
         (int)play_area.height
     };
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderFillRect(renderer, (&play_area_background_rect));
 
     // here we can start the drawing of our objects
     //render snake head first
-    //SDL_Rect snake_body_rect =
-    //{
-    //    (int)snake_node->snake_body.x,
-    //    (int)snake_node->snake_body.y,
-    //    (int)snake_node->snake_body.width,
-    //    (int)snake_node->snake_body.height
-    //};
-    //SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    //SDL_RenderFillRect(renderer, (&snake_body_rect));
-        //// here we can start the drawing of our objects
-        ////render snake head first
-        //SDL_Rect snake_body_rect =
-        //{
-        //    (int)snake_body[0].body_part.x,
-        //    (int)snake_body[0].body_part.y,
-        //    (int)snake_body[0].body_part.width,
-        //    (int)snake_body[0].body_part.height
-        //};
-        //SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        //SDL_RenderFillRect(renderer, (&snake_body_rect));
+    SDL_Rect snake_body_rect =
+    {
+        (int)snake_node->snake_body.x,
+        (int)snake_node->snake_body.y,
+        (int)snake_node->snake_body.width,
+        (int)snake_node->snake_body.height
+    };
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderFillRect(renderer, (&snake_body_rect));
 
     // below creates the food 
     SDL_Rect food_rect =
@@ -531,7 +518,7 @@ void render()
     //    SDL_RenderFillRect(renderer, (&snake_body_rect));
     //    k++;
     //}
-    //SDL_RenderPresent(renderer); // setups buffer for displaying frames
+    SDL_RenderPresent(renderer); // setups buffer for displaying frames
 }
 
 
