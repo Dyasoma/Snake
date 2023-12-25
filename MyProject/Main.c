@@ -10,7 +10,6 @@ int game_is_running = FALSE; // initially game isn't actually running, similar t
 SDL_Window* window = NULL; // assumes address of our window is set to null, made global such that main can access it
 SDL_Renderer* renderer = NULL; // assumes address of our renderer is set to null, made global such that main can access it
 
-
 int last_frame_time = 0;
 double origin_background_x = (WINDOW_WIDTH / 2) - GAME_WINDOW_WIDTH / 2; // controls background origin in x
 double origin_background_y = (WINDOW_HEIGHT / 2) - GAME_WINDOW_HEIGHT / 2; // controls backgroun origin in y
@@ -18,52 +17,51 @@ int right_motion = 0; // controls motion in right direction
 int left_motion = 0; // controls motion in left direction
 int up_motion = 0; // controls motion in up direction
 int down_motion = 0; // controls motion in the down direction
-int snake_width = 15; // controls how wide from the top left the snake is
-int snake_height = 15; // controls how tall the snake is from the top left
+int snake_width = SNAKE_SIZE; // controls how wide from the top left the snake is
+int snake_height = SNAKE_SIZE; // controls how tall the snake is from the top left
 int food_counter = 0; // counter for how often the snakes eaten food
 int direction = 0; // decides direction of movement of snake defaults to left
-
-int Collision = FALSE; // variable for detecting collisions currently does nothing
-
+int colission = FALSE;
 
 
-struct unit //stuct that describes our basic snake head and snake body units
+typedef struct box // Main struct for everything
 {
     float x;
     float y;
     float width;
     float height;
 
-} unit;
+}box;
 
-struct body //struct that will contain a body
+box background; // box that represents the background for the entire window
+box play_area; // box that describes the play area casted within the window
+box unit; // snake unit
+box food; // Food for snake
+typedef struct body //struct that will contain a body
 {
     float exists; // this field determines if that part of the snakes body actually exists
-    struct unit body_part;
+    struct box body_part;
     int direction_body;
 
 } body;
 
 
-struct food // struct that is for our food units 
+
+typedef struct node
 {
-    float x;
-    float y;
-    float width;
-    float height;
-}food;
-
-struct background // background struct
-{
-    float x;
-    float y;
-    float width;
-    float height;
-}background;
+    struct node* next; // points to next snake node
+    box snake_body;// contains the structure for the snakes body part at that node
+    int node_direction; // contains the direction that snake node is facing
 
 
-struct body snake_body[SNAKE_SIZE_CAP]; // we create a snake body comprised of body parts which are themselves a simple snake unit
+}node;
 
+
+// step 1 create a pointer to our node
+//node* snake_node = NULL;
+
+
+//struct body snake_body[SNAKE_SIZE_CAP]; // we create a snake body comprised of body parts which are themselves a simple snake unit
 
 int initialize_window(void) // don't need a function declaration as we are calling a function before main
 {
@@ -110,16 +108,19 @@ void setup() {
     srand(time((NULL))); // used to set the seed for rand based on current time
 
 
-    for (int i = 0; i < 50; i++)
-    {
-        snake_body[i].exists = 0;
-    }
+
+
     //TODO:
     // controls the setting of our background fields 
-    background.x = (float)origin_background_x;
-    background.y = (float)origin_background_y;
-    background.width = GAME_WINDOW_WIDTH;
-    background.height = GAME_WINDOW_HEIGHT;
+    background.x = 0;
+    background.y = 0;
+    background.width = WINDOW_WIDTH;
+    background.height = WINDOW_HEIGHT;
+    // play area
+    play_area.x = (float)origin_background_x;
+    play_area.y = (float)origin_background_y;
+    play_area.width = GAME_WINDOW_WIDTH;
+    play_area.height = GAME_WINDOW_HEIGHT;
 
     unit.x = WINDOW_WIDTH / 2; // snake head will start at midpoint of window width
     unit.y = WINDOW_HEIGHT / 2; // snake head will start at midpoint of window height
@@ -129,10 +130,58 @@ void setup() {
     // food will spawn in a random location
     food.x = (rand() % (int)(GAME_WINDOW_WIDTH / 2)) + origin_background_x;
     food.y = (rand() % (int)(GAME_WINDOW_HEIGHT / 2)) + origin_background_y;
+    food.width = FOOD_SIZE;
+    food.height = FOOD_SIZE;
 
 
-    food.width = 15;
-    food.height = 15;
+
+
+
+
+    ////create a temp node to get our first address
+    //node *temp = malloc(sizeof(node));
+
+    //if (temp = NULL) // error handling to ensure we get memory for our temporary node
+    //{
+    //    fprintf(stderr, "Error allocating memory");
+    //    return(1);
+    //}
+
+    //temp->next = NULL;
+
+    //snake_node = temp;
+
+    ////now need to free temp
+
+    //free(temp);
+
+    // set snake_node to point to null
+
+    //Defines the beginning of the snake body by defining the head first
+//snake_node->snake_body.x = unit.x;
+//snake_node->snake_body.y = unit.y;
+//snake_node->snake_body.width = unit.width;
+//snake_node->snake_body.height = unit.height;
+//snake_node->node_direction = direction;
+
+
+
+
+
+    // // sets the existing attribute of each snake body part to be false excluding head
+    //for (int i = 0; i < SNAKE_SIZE_CAP; i++)
+    //{
+    //    snake_body[i].exists = 0;
+    //}
+    //Defines the beginning of the snake body by defining the head first
+    //snake_body[0].body_part.x = unit.x;
+    //snake_body[0].body_part.y = unit.y;
+    //snake_body[0].body_part.width = unit.width;
+    //snake_body[0].body_part.height = unit.height;
+    //snake_body[0].exists = TRUE;
+    //snake_body[0].direction_body = direction;
+
+
 
 
 }
@@ -153,6 +202,7 @@ void process_input()
             // sets motion direction to right which I've encoded as 0
             right_motion += 1;
             direction = 0;
+            break;
         }
         if (event.key.keysym.sym == SDLK_LEFT && direction != 0) // moves left if left arrow pressed and we aren't moving right 
         {
@@ -183,7 +233,11 @@ void process_input()
 
 void update()
 {
-    // below are some dummy variables for controlling how snake bodies are generated and their positions are moved
+    if (colission == TRUE)
+    {
+        game_is_running = FALSE;
+    }
+    //dummy varaibles for moving snake body parts
     int dummy_x = 0;
     int dummy_y = 0;
     int dummy_direction = 0;
@@ -191,18 +245,30 @@ void update()
     int flummy_y = 0;
     int flummy_direction = 0;
 
-    for (int i = 0; i < food_counter; i++)
-    {
-        if (snake_body[i].exists == FALSE) // goes through entire snake body array and sets its exists field to false
-        {
-            break;
-        }
-        if (((snake_body[i].body_part.x > unit.x - snake_width) && (snake_body[i].body_part.x < unit.x + snake_width)) && ((snake_body[i].body_part.y > unit.y - snake_height) && (snake_body[i].body_part.y < unit.x + snake_height)))
-        {
-            //unit.x > food.x - food.width && unit.x < food.x + food.width) && (unit.y > food.y - food.height && unit.y < food.y + food.height
-            Collision = TRUE;
-        }
-    }
+
+
+
+
+    // step 1 is to move the snake head.
+
+   // flummy_x = snake_node->snake_body.x;
+    //flummy_y = snake_node->snake_body.y;
+    //flummy_direction = snake_node->node_direction;
+    //snake_node->snake_body.x = unit.x;
+    //snake_node->snake_body.y = unit.y;
+    //snake_node->node_direction = direction;
+
+
+    //  // moves the snake head storing old position first
+        //flummy_x = snake_body[0].body_part.x;
+        //flummy_y = snake_body[0].body_part.y;
+        //flummy_direction = snake_body[0].direction_body;
+        //snake_body[0].body_part.x = unit.x;
+        //snake_body[0].body_part.y = unit.y;
+
+
+
+
     //: waste some time/ sleep until we reach the frame target
     // what the below does is use the SDL_Ticks_Passed function to compare two time stamps.
     // first time stamp is the current time, second one is the time since the last update ran(or first if its the first update)
@@ -212,7 +278,7 @@ void update()
     // Loop will continue until they match.
     //  while (!SDL_TICKS_PASSED(SDL_GetTicks(), last_frame_time + FRAME_TARGET_TIME));
 
-    //while loop cpu heavy, so we use SDL_Delay
+        //while loop cpu heavy, so we use SDL_Delay
 
     int time_to_wait = (FRAME_TARGET_TIME - (SDL_GetTicks() - last_frame_time));
 
@@ -236,158 +302,162 @@ void update()
     // Once we've added delta_time factor, objects move the same distance regardless of the framerate
 
 
-    // 
-    //TODO: Logic to keep a fixed timestamp
-
-
-
-    last_frame_time = SDL_GetTicks();
-    // the below handles the motion of the main unit
-    if (direction == 0)
+    // Logic to keep a fixed timestamp
     {
-        unit.x += (SPEED)*delta_time;
-    }
-    else if (direction == 1)
-    {
-        unit.x -= (SPEED)*delta_time;
-    }
-    else if (direction == 2)
-    {
-        unit.y -= (SPEED)*delta_time; // we subtract in up direction since pixels are drawn from top left to bottom right ie 3 in y is higher than 111 in y
-    }
-    else if (direction == 3)
-    {
-        unit.y += (SPEED)*delta_time;
-    }
-
-
-    if (food_counter == 0) // base case at the beginning
-    {
-        snake_body[0].exists == 1; // sets the first part to exist
-
+        last_frame_time = SDL_GetTicks();
+        // the below handles the motion of the main unit
         if (direction == 0)
         {
-            snake_body[0].body_part.x = unit.x - snake_width;
-            snake_body[0].body_part.y = unit.y;
-
+            unit.x += (SPEED * delta_time);
         }
         else if (direction == 1)
         {
-            snake_body[0].body_part.x = unit.x + snake_width;
-            snake_body[0].body_part.y = unit.y;
+            unit.x -= (SPEED * delta_time);
         }
         else if (direction == 2)
         {
-            snake_body[0].body_part.x = unit.x;
-            snake_body[0].body_part.y = unit.y - snake_height;
+            unit.y -= (SPEED * delta_time); // we subtract in up direction since pixels are drawn from top left to bottom right ie 3 in y is higher than 111 in y
         }
-        else
+        else if (direction == 3)
         {
-            snake_body[0].body_part.x = unit.x;
-            snake_body[0].body_part.y = unit.y + snake_height;
+            unit.y += (SPEED * delta_time);
         }
-        snake_body[0].direction_body = direction;
-        dummy_x = snake_body[1].body_part.x;
-        dummy_y = snake_body[1].body_part.y;
     }
 
 
-
-    else if (food_counter > 0)
+    // Map Wrap around
     {
-        if (direction == 0)
-        {
-            snake_body[food_counter].body_part.x = unit.x - snake_width;
-            snake_body[food_counter].body_part.y = unit.y;
-        }
-        else if (direction == 1)
-        {
-            snake_body[food_counter].body_part.x = unit.x + snake_width;
-            snake_body[food_counter].body_part.y = unit.y;
-
-        }
-        else if (direction == 2)
-        {
-            snake_body[food_counter].body_part.x = unit.x;
-            snake_body[food_counter].body_part.y = unit.y + snake_height;
-        }
-        else
-        {
-            snake_body[food_counter].body_part.x = unit.x;
-            snake_body[food_counter].body_part.y = unit.y - snake_height;
-        }
-        snake_body[food_counter].direction_body = direction;
-
-        dummy_x = snake_body[food_counter].body_part.x;
-        dummy_y = snake_body[food_counter].body_part.y;
-        dummy_direction = snake_body[food_counter].direction_body;
-    }
-    else
-    {
-
-    }
-
-
-    for (int i = food_counter; i > 0; i--)
-    {
-        if (snake_body[i].exists == 1)
-        {
-
-            flummy_x = snake_body[i].body_part.x;
-            flummy_y = snake_body[i].body_part.y;
-            flummy_direction = snake_body[i].direction_body;
-
-            snake_body[i].direction_body = dummy_direction;
-            snake_body[i].body_part.x = dummy_x;
-            snake_body[i].body_part.y = dummy_y;
-
-            dummy_x = flummy_x;
-            dummy_y = flummy_y;
-            dummy_direction = flummy_direction;
-        }
-        else
-        {
-            break;
-        }
-    }
-
-
-    // allows for the map to wrap around
-    if (unit.x < origin_background_x)
-        unit.x = WINDOW_WIDTH - (origin_background_x + snake_width);
-    if (unit.x > WINDOW_WIDTH - origin_background_x - snake_width)
-        unit.x = origin_background_x;
-    if (unit.y < origin_background_y)
-        unit.y = WINDOW_HEIGHT - (origin_background_y + snake_height);
-    if (unit.y > WINDOW_HEIGHT - origin_background_y - snake_height)
-        unit.y = origin_background_y;
-
-
-
-
-    // handles creating a new snake body
-    if ((unit.x > food.x - food.width && unit.x < food.x + food.width) && (unit.y > food.y - food.height && unit.y < food.y + food.height))
-    {
-        food.x = (rand() % (int)(GAME_WINDOW_WIDTH / 2)) + origin_background_x;
-        food.y = (rand() % (int)(GAME_WINDOW_HEIGHT / 2)) + origin_background_y;
-        food_counter++;
-        snake_body[food_counter].exists = 1;
-        snake_body[food_counter].body_part.x = unit.x;
-        snake_body[food_counter].body_part.y = unit.y;
-        snake_body[food_counter].body_part.width = unit.width;
-        snake_body[food_counter].body_part.height = unit.height;
+        if (unit.x < origin_background_x)
+            unit.x = WINDOW_WIDTH - (origin_background_x + snake_width);
+        if (unit.x > WINDOW_WIDTH - origin_background_x - snake_width)
+            unit.x = origin_background_x;
+        if (unit.y < origin_background_y)
+            unit.y = WINDOW_HEIGHT - (origin_background_y + snake_height);
+        if (unit.y > WINDOW_HEIGHT - origin_background_y - snake_height)
+            unit.y = origin_background_y;
     }
 
 
 
+    //TODO:
+            // swap out flummy_x for unit.x and flummy_y for unit.y to make food disappear instantly
+    //TODO:
 
+
+    // now we move the snake node body
+
+//dummy_direction = snake_node->node_direction;
+//dummy_x = snake_node->snake_body.x;
+//dummy_y = snake_node->snake_body.y;
+//snake_node->snake_body.x = flummy_x;
+//snake_node->snake_body.y = flummy_y;
+//snake_node->node_direction = flummy_direction;
+
+//flummy_x = dummy_x;
+//flummy_y = dummy_y;
+//flummy_direction = dummy_direction;
+
+
+
+        //// moves the snake body
+        //for (int i = 1; i <= food_counter; i++)
+        //{
+
+        //    dummy_direction = snake_body[i].direction_body;
+
+        //    switch (dummy_direction)
+        //    {
+        //    case 0: // moving right
+
+        //        dummy_x = snake_body[i].body_part.x;
+        //        dummy_y = snake_body[i].body_part.y;
+        //        snake_body[i].body_part.x = flummy_x;
+        //        snake_body[i].body_part.y = flummy_y;
+        //        snake_body[i].direction_body = flummy_direction;
+        //        break;
+
+        //    case 1: // moving left
+        //        dummy_x = snake_body[i].body_part.x;
+        //        dummy_y = snake_body[i].body_part.y;
+        //        snake_body[i].body_part.x = flummy_x;
+        //        snake_body[i].body_part.y = flummy_y;
+        //        snake_body[i].direction_body = flummy_direction;
+        //        break;
+
+        //    case 2: // moving up
+        //        dummy_x = snake_body[i].body_part.x;
+        //        dummy_y = snake_body[i].body_part.y;
+        //        snake_body[i].body_part.x = flummy_x;
+        //        snake_body[i].body_part.y = flummy_y;
+        //        snake_body[i].direction_body = flummy_direction;
+        //        break;
+
+        //    case 3: // moving down
+        //        dummy_x = snake_body[i].body_part.x;
+        //        dummy_y = snake_body[i].body_part.y;
+        //        snake_body[i].body_part.x = flummy_x;
+        //        snake_body[i].body_part.y = flummy_y;
+        //        snake_body[i].direction_body = flummy_direction;
+        //        break;
+        //    }
+        //    flummy_x = dummy_x;
+        //    flummy_y = dummy_y;
+        //    flummy_direction = dummy_direction;
+        //    //  for (int i = 1; i < food_counter + 1; i++)
+        //    {
+        //    }
+        //}
+
+       // // handles creating a new snake body
+        //if ((unit.x > food.x - food.width / 1.5 && unit.x < food.x + food.width / 1.5) && (unit.y > food.y - food.height / 1.5 && unit.y < food.y + food.height / 1.5))
+        //{
+         //   food.x = (rand() % (int)(GAME_WINDOW_WIDTH / 2)) + origin_background_x;
+          //  food.y = (rand() % (int)(GAME_WINDOW_HEIGHT / 2)) + origin_background_y;
+           // food_counter++;
+           // snake_body[food_counter].exists = TRUE;
+            //snake_body[food_counter].body_part.width = unit.width;
+            //snake_body[food_counter].body_part.height = unit.height;
+            //switch (flummy_direction)
+            //{
+            //case 0: // moving right
+             //   snake_body[food_counter].body_part.x = flummy_x;
+              //  snake_body[food_counter].body_part.y = flummy_y;
+               // break;
+
+           // case 1: // moving left
+            //    snake_body[food_counter].body_part.x = flummy_x;
+             //   snake_body[food_counter].body_part.y = flummy_y;
+              //  break;
+
+           // case 2: // moving up
+            //    snake_body[food_counter].body_part.x = flummy_x;
+             //   snake_body[food_counter].body_part.y = flummy_y;
+              //  break;
+
+         //   case 3: // moving down
+           //     snake_body[food_counter].body_part.x = flummy_x;
+            //    snake_body[food_counter].body_part.y = flummy_y;
+             //   break;
+            //}
+            //snake_body[food_counter].direction_body = flummy_direction;
+
+       // }
+    //// handles collisions
+      //  int m = 1;
+       // while (snake_body[m].exists == TRUE)
+        //{
+         //   if (snake_body[0].body_part.x > snake_body[m].body_part.x - SNAKE_SIZE / 5 && snake_body[0].body_part.x < snake_body[m].body_part.x + SNAKE_SIZE / 5 && snake_body[0].body_part.y > snake_body[m].body_part.y - SNAKE_SIZE / 5 && snake_body[0].body_part.y < snake_body[m].body_part.y + SNAKE_SIZE / 5)
+          //  {
+           //     colission = TRUE;
+            //}
+            //m++;
+       // }
 }
+
+
 void render()
 {
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
 
-    // below creates background for main play area
     SDL_Rect background_rect =
     {
         (int)background.x,
@@ -395,10 +465,43 @@ void render()
         (int)background.width,
         (int)background.height
     };
-    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_RenderFillRect(renderer, (&background_rect));
 
+    // below creates background for main play area
+    SDL_Rect play_area_background_rect =
+    {
+        (int)play_area.x,
+        (int)play_area.y,
+        (int)play_area.width,
+        (int)play_area.height
+    };
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_RenderFillRect(renderer, (&play_area_background_rect));
+
     // here we can start the drawing of our objects
+    //render snake head first
+    //SDL_Rect snake_body_rect =
+    //{
+    //    (int)snake_node->snake_body.x,
+    //    (int)snake_node->snake_body.y,
+    //    (int)snake_node->snake_body.width,
+    //    (int)snake_node->snake_body.height
+    //};
+    //SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    //SDL_RenderFillRect(renderer, (&snake_body_rect));
+        //// here we can start the drawing of our objects
+        ////render snake head first
+        //SDL_Rect snake_body_rect =
+        //{
+        //    (int)snake_body[0].body_part.x,
+        //    (int)snake_body[0].body_part.y,
+        //    (int)snake_body[0].body_part.width,
+        //    (int)snake_body[0].body_part.height
+        //};
+        //SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        //SDL_RenderFillRect(renderer, (&snake_body_rect));
+
     // below creates the food 
     SDL_Rect food_rect =
     {
@@ -407,52 +510,28 @@ void render()
         (int)food.width,
         (int)food.height
     };
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(renderer, (&food_rect));
 
-    // below creates the snake head
-    SDL_Rect unit_rect =
-    {
-        (int)unit.x,
-        (int)unit.y,
-        (int)unit.width,
-        (int)unit.height
-    };
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderFillRect(renderer, (&unit_rect));
 
+    // IMPORTANT
+    //// render the rest of the snake
 
-    //below renders the rest of the snake
-    for (int i = food_counter; i > 0; i--)
-    {
-        if (snake_body[i].exists == 1 && i == food_counter)
-        {
-            SDL_Rect(snake_body_rect) =
-            {
-                (int)snake_body[i].body_part.x,
-                (int)snake_body[i].body_part.y,
-                (int)snake_body[i].body_part.width,
-                (int)snake_body[i].body_part.height
-            };
-            SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
-            SDL_RenderFillRect(renderer, (&snake_body_rect));
-        }
-        if (snake_body[i].exists == 1 && i != food_counter)
-        {
-            SDL_Rect(snake_body_rect) =
-            {
-                (int)snake_body[i].body_part.x,
-                (int)snake_body[i].body_part.y,
-                (int)snake_body[i].body_part.width,
-                (int)snake_body[i].body_part.height
-            };
-            SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
-            SDL_RenderFillRect(renderer, (&snake_body_rect));
-        }
-    }
-
-
-    SDL_RenderPresent(renderer); // setups buffer for displaying frames
+    //int k = 1;
+    //while (snake_body[k].exists == TRUE)
+    //{
+    //    SDL_Rect snake_body_rect =
+    //    {
+    //        (int)snake_body[k].body_part.x,
+    //        (int)snake_body[k].body_part.y,
+    //        (int)snake_body[k].body_part.width,
+    //        (int)snake_body[k].body_part.height
+    //    };
+    //    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    //    SDL_RenderFillRect(renderer, (&snake_body_rect));
+    //    k++;
+    //}
+    //SDL_RenderPresent(renderer); // setups buffer for displaying frames
 }
 
 
