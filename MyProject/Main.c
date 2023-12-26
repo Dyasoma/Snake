@@ -4,18 +4,14 @@
 #include <SDL.h>
 #include "./constants.h"
 
-
-
-
-//TODO 
-// ADD ERROR HANDLING
+//TODO
+// ADD ERROR HANDLING for all memory allocations
 // ADD SOME FORM OF MEMORY MANAGEMENT
+// ADD SCOREBOARD FOR NUMBER OF FOODS EATEN
+// ADD END GAME WINDOW
+// ADD MAIN MENU
 
-
-
-
-
-
+// ADD SELECTION FOR 1 player or 2 player snake
 
 int game_is_running = FALSE; // initially game isn't actually running, similar to flag first down
 SDL_Window* window = NULL; // assumes address of our window is set to null, made global such that main can access it
@@ -54,10 +50,6 @@ typedef struct box // Main struct for everything
  box unit; // snake unit
  box food; // Food for snake
 
-
-
-
-
 typedef struct node
 {
     struct node* next; // points to next snake node
@@ -69,8 +61,6 @@ typedef struct node
 
 // step 1 create a pointer to our node
 node* snake_node = NULL;
-
-//struct body snake_body[SNAKE_SIZE_CAP]; // we create a snake body comprised of body parts which are themselves a simple snake unit
 
 int initialize_window(void) // don't need a function declaration as we are calling a function before main
 {
@@ -88,8 +78,6 @@ int initialize_window(void) // don't need a function declaration as we are calli
         WINDOW_HEIGHT,// height of window
         SDL_WINDOW_BORDERLESS // sets our window to be truly borderless
     );
-
-
     // window might fail so need to error handle
 
     if (!window)
@@ -115,12 +103,11 @@ int initialize_window(void) // don't need a function declaration as we are calli
 
 void setup() {
     srand(time((NULL))); // used to set the seed for rand based on current time
+
+    //sets food to white
     food.color.red = 255;
     food.color.green = 255;
     food.color.blue = 255;
-
-
-
     //TODO:
     // controls the setting of our background fields 
     background.x = 0;
@@ -147,14 +134,8 @@ void setup() {
     food.width = FOOD_SIZE;
     food.height = FOOD_SIZE;
 
-
-
-
-
-
     ////create a temp node to get our first address
     node *temp = malloc(sizeof(node));
-
     if (temp == NULL) // error handling to ensure we get memory for our temporary node
     {
         fprintf(stderr, "Error allocating memory");
@@ -164,15 +145,6 @@ void setup() {
     temp->next = NULL;
 
     snake_node = temp;
-
-    //now need to free temp
-
-    //Defines the beginning of the snake body by defining the head first
-
-
-
-
-
 }
 
 void process_input()
@@ -228,37 +200,52 @@ void update()
     }
 
 
-   // step 1 is to move the snake head.
+   // step 1 is to move the snake head ie the beginning of our linked list
+
+    // two temporary dummy variables
     node flummy;
     node dummy;
 
+    // need 2 dummy variables as we want to do a continous swap shuffling entire linked list forward
+        // as opposed to a simple swap which requires only 1 dummy variable we need 2 to do a synchronized shuffle 
+
+    // store current data of the head of the snake-- also the head of our linked list
     flummy = *snake_node;
 
+    // changes values of snake_node to be the values associated with the current unit values(the ones that change due to pressing arrow keys)
     snake_node->snake_body.x = unit.x;
     snake_node->snake_body.y = unit.y;
     snake_node->snake_body.width = unit.width;
     snake_node->snake_body.height = unit.height;
-
     snake_node->direction = direction;
 
     
     node* body = snake_node->next;
 
-    while (body != NULL) // handles the middle
+    if (body == NULL)
     {
-        dummy.snake_body.x = body->snake_body.x;
-        dummy.snake_body.y = body->snake_body.y;
-        dummy.direction = body->direction;
-        body->snake_body.x = flummy.snake_body.x;
-        body->snake_body.y = flummy.snake_body.y;
-        body->direction = flummy.direction;
-        flummy.snake_body.x = dummy.snake_body.x;
-        flummy.snake_body.y = dummy.snake_body.y;
-        flummy.direction = dummy.direction;
-        body = body->next;
-
+        // skip
     }
-    if (body != NULL && body->next == NULL) // handles the last cell
+    
+    else if (body != NULL && body->next != NULL)
+    {
+        while (body != NULL) // handles the middle as we have 2 nodes to shuffle
+        {
+
+            dummy.snake_body.x = body->snake_body.x;
+            dummy.snake_body.y = body->snake_body.y;
+            dummy.direction = body->direction;
+            body->snake_body.x = flummy.snake_body.x;
+            body->snake_body.y = flummy.snake_body.y;
+            body->direction = flummy.direction;
+            flummy.snake_body.x = dummy.snake_body.x;
+            flummy.snake_body.y = dummy.snake_body.y;
+            flummy.direction = dummy.direction;
+            body = body->next;
+
+        }
+    }
+    else if (body != NULL && body->next == NULL) // handles the last cell, last cells next is null so its special just like the first part of our linked list
     {
         body->snake_body = flummy.snake_body;
         body->direction = flummy.direction;
@@ -302,23 +289,21 @@ void update()
         // the below handles the motion of the main unit
         if (direction == 0)
         {
-            unit.x += (SPEED * delta_time);
+            unit.x += ((SPEED + food_counter * 2) * delta_time);
         }
         else if (direction == 1)
         {
-            unit.x -= (SPEED * delta_time);
+            unit.x -= ((SPEED + food_counter * 2) * delta_time);
         }
         else if (direction == 2)
         {
-            unit.y -= (SPEED * delta_time); // we subtract in up direction since pixels are drawn from top left to bottom right ie 3 in y is higher than 111 in y
+            unit.y -= ((SPEED + food_counter * 2) * delta_time); // we subtract in up direction since pixels are drawn from top left to bottom right ie 3 in y is higher than 111 in y
         }
         else if (direction == 3)
         {
-            unit.y += (SPEED * delta_time);
+            unit.y += ((SPEED + food_counter * 2) * delta_time);
         }
     }
-
-
     // Map Wrap around
     {
         if (unit.x < origin_background_x)
@@ -331,58 +316,53 @@ void update()
             unit.y = origin_background_y;
     }
 
+    // // handles creating a new snake body
+    if ((unit.x > food.x - food.width / 1.5 && unit.x < food.x + food.width / 1.5) && (unit.y > food.y - food.height / 1.5 && unit.y < food.y + food.height / 1.5))
+    {
+        // generates random position for next food
+        food.x = (rand() % (int)(GAME_WINDOW_WIDTH / 2)) + origin_background_x;
+        food.y = (rand() % (int)(GAME_WINDOW_HEIGHT / 2)) + origin_background_y;
+        food_counter++;
 
 
-    //TODO:
-            // swap out flummy_x for unit.x and flummy_y for unit.y to make food disappear instantly
-    //TODO:
+        node* temp = malloc(sizeof(node));
 
-
-    // now we move the snake node body
-       // // handles creating a new snake body
-        if ((unit.x > food.x - food.width / 1.5 && unit.x < food.x + food.width / 1.5) && (unit.y > food.y - food.height / 1.5 && unit.y < food.y + food.height / 1.5))
+        if (temp == NULL)
         {
-            food.x = (rand() % (int)(GAME_WINDOW_WIDTH / 2)) + origin_background_x;
-            food.y = (rand() % (int)(GAME_WINDOW_HEIGHT / 2)) + origin_background_y;
-            food_counter++;
+            // need to actually add real error handling
 
-
-            node* temp = malloc(sizeof(node));
-
-            if (temp == NULL)
-            {
-                // need to actually add real error handling
-
-                game_is_running = FALSE;
-            }
-
-            temp->next = snake_node;
-            temp->snake_body = unit;
-            temp->direction = direction;
-            temp->snake_body.color = food.color;
-
-
-            food.color.red = rand() % 255;
-            food.color.green = rand() % 255;
-            food.color.blue = rand() % 255;
-
-            snake_node = temp;
-
-
+            game_is_running = FALSE;
+            exit(1);
         }
-    //// handles collisions
-        if (food_counter > 3)
+        //linked list stuff. set temp to be the next node in our list, then fill it with info. then set front of the list equal to what temp is pointing to
+        temp->next = snake_node;
+        temp->snake_body = unit;
+        temp->direction = direction;
+        temp->snake_body.color = food.color;
+
+        // generates random color for food starting from 50 since I don't want super dark colors
+        food.color.red = rand() % 205 + 100;
+        food.color.green = rand() % 205 + 100;
+        food.color.blue = rand() % 205 + 100;
+
+        snake_node = temp;
+
+
+    }
+
+    // handles collisions
+    if (food_counter > 3)
+    {
+        node* m = snake_node->next->next;
+        while (m != NULL)
         {
-            node* m = snake_node->next->next;
-            while (m != NULL)
+            if (snake_node->snake_body.x > m->snake_body.x - (float) SNAKE_SIZE / 10 && snake_node->snake_body.x < m->snake_body.x + (float) SNAKE_SIZE / 10 && snake_node->snake_body.y > m->snake_body.y - (float) SNAKE_SIZE / 10 && snake_node->snake_body.y < m->snake_body.y + (float) SNAKE_SIZE / 10)
             {
-                if (snake_node->snake_body.x > m->snake_body.x - (float) SNAKE_SIZE / 10 && snake_node->snake_body.x < m->snake_body.x + (float) SNAKE_SIZE / 10 && snake_node->snake_body.y > m->snake_body.y - (float) SNAKE_SIZE / 10 && snake_node->snake_body.y < m->snake_body.y + (float) SNAKE_SIZE / 10)
-                {
-                    colission = TRUE;
-                }
-                m = m->next;
+                colission = TRUE;
             }
+            m = m->next;
         }
+    }
 
 }
 
@@ -412,35 +392,8 @@ void render()
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderFillRect(renderer, (&play_area_background_rect));
 
-    // here we can start the drawing of our objects
-    //render snake head first
-    //SDL_Rect snake_body_rect =
-    //{
-    //    (int)snake_node->snake_body.x,
-    //    (int)snake_node->snake_body.y,
-    //    (int)snake_node->snake_body.width,
-    //    (int)snake_node->snake_body.height
-    //};
-    //SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    //SDL_RenderFillRect(renderer, (&snake_body_rect));
-
-
-
-    //SDL_Rect snake_body_rect =
-    //{
-    //    (int)snake_node->snake_body.x,
-    //    (int)snake_node->snake_body.y,
-    //    (int)snake_node->snake_body.width,
-    //    (int)snake_node->snake_body.height
-    //};
-    //SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    //SDL_RenderFillRect(renderer, (&snake_body_rect));
-
-
+    //Below renders the entire snake
     node* flow = snake_node;
-
-
-
     while (flow != NULL)
     {
         SDL_Rect snake_body_flow_rect =
@@ -454,7 +407,6 @@ void render()
         SDL_RenderFillRect(renderer, (&snake_body_flow_rect));
         flow = flow->next;
     }
-
     // below creates the food 
     SDL_Rect food_rect =
     {
@@ -465,29 +417,8 @@ void render()
     };
     SDL_SetRenderDrawColor(renderer, food.color.red, food.color.green, food.color.blue, 255);
     SDL_RenderFillRect(renderer, (&food_rect));
-
-
-    // IMPORTANT
-    //// render the rest of the snake
-
-    //int k = 1;
-    //while (snake_body[k].exists == TRUE)
-    //{
-    //    SDL_Rect snake_body_rect =
-    //    {
-    //        (int)snake_body[k].body_part.x,
-    //        (int)snake_body[k].body_part.y,
-    //        (int)snake_body[k].body_part.width,
-    //        (int)snake_body[k].body_part.height
-    //    };
-    //    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    //    SDL_RenderFillRect(renderer, (&snake_body_rect));
-    //    k++;
-    //}
     SDL_RenderPresent(renderer); // setups buffer for displaying frames
 }
-
-
 void destroy_window()
 {
     SDL_DestroyRenderer(renderer); // simply put in the thing we want to destroy
@@ -495,13 +426,8 @@ void destroy_window()
     SDL_Quit();
     // *** NOTE WE DESTORY IN THE REVERSE ORDER WE CREATED, Don't want to orphan any pointers
 }
-
-
 int main(void)
 {
-
-
-
     game_is_running = initialize_window();
     setup();
     // reason we use game_is_running is that process/update/render will run again the initialize window function and if it fails game will stop
@@ -511,11 +437,8 @@ int main(void)
         update();
         render();
     }
-
     // if we can no longer finish the game we must get rid of the memory associated with the window
-
     destroy_window();
-
     while (snake_node->next != NULL)
     {
     node* destroyer = snake_node;
@@ -523,8 +446,5 @@ int main(void)
     free(destroyer);
     }
     free(snake_node);
-
-
-
     return 0;
 }
