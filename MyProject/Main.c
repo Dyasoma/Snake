@@ -6,6 +6,17 @@
 
 
 
+
+//TODO 
+// ADD ERROR HANDLING
+// ADD SOME FORM OF MEMORY MANAGEMENT
+
+
+
+
+
+
+
 int game_is_running = FALSE; // initially game isn't actually running, similar to flag first down
 SDL_Window* window = NULL; // assumes address of our window is set to null, made global such that main can access it
 SDL_Renderer* renderer = NULL; // assumes address of our renderer is set to null, made global such that main can access it
@@ -229,9 +240,7 @@ void update()
     snake_node->snake_body.height = unit.height;
 
     snake_node->direction = direction;
-    //snake_node->snake_body.red = 255;
-    //snake_node->snake_body.green = 255;
-    //snake_node->snake_body.blue = 255;
+
     
     node* body = snake_node->next;
 
@@ -343,6 +352,7 @@ void update()
             if (temp == NULL)
             {
                 // need to actually add real error handling
+
                 game_is_running = FALSE;
             }
 
@@ -361,15 +371,19 @@ void update()
 
         }
     //// handles collisions
-      //  int m = 1;
-       // while (snake_body[m].exists == TRUE)
-        //{
-         //   if (snake_body[0].body_part.x > snake_body[m].body_part.x - SNAKE_SIZE / 5 && snake_body[0].body_part.x < snake_body[m].body_part.x + SNAKE_SIZE / 5 && snake_body[0].body_part.y > snake_body[m].body_part.y - SNAKE_SIZE / 5 && snake_body[0].body_part.y < snake_body[m].body_part.y + SNAKE_SIZE / 5)
-          //  {
-           //     colission = TRUE;
-            //}
-            //m++;
-       // }
+        if (food_counter > 3)
+        {
+            node* m = snake_node->next->next;
+            while (m != NULL)
+            {
+                if (snake_node->snake_body.x > m->snake_body.x - (float) SNAKE_SIZE / 10 && snake_node->snake_body.x < m->snake_body.x + (float) SNAKE_SIZE / 10 && snake_node->snake_body.y > m->snake_body.y - (float) SNAKE_SIZE / 10 && snake_node->snake_body.y < m->snake_body.y + (float) SNAKE_SIZE / 10)
+                {
+                    colission = TRUE;
+                }
+                m = m->next;
+            }
+        }
+
 }
 
 
@@ -501,5 +515,16 @@ int main(void)
     // if we can no longer finish the game we must get rid of the memory associated with the window
 
     destroy_window();
+
+    while (snake_node->next != NULL)
+    {
+    node* destroyer = snake_node;
+    snake_node = snake_node->next;
+    free(destroyer);
+    }
+    free(snake_node);
+
+
+
     return 0;
 }
