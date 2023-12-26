@@ -23,27 +23,27 @@ int food_counter = 0; // counter for how often the snakes eaten food
 int direction = 0; // decides direction of movement of snake defaults to left
 int colission = FALSE;
 
-
+typedef struct color
+{
+    int red;
+    int green;
+    int blue;
+}color;
 typedef struct box // Main struct for everything
 {
     float x;
     float y;
     float width;
     float height;
-
+    struct color color;
 }box;
 
  box background; // box that represents the background for the entire window
  box play_area; // box that describes the play area casted within the window
  box unit; // snake unit
  box food; // Food for snake
-typedef struct body //struct that will contain a body
-{
-    float exists; // this field determines if that part of the snakes body actually exists
-    struct box body_part;
-    int direction_body;
 
-} body;
+
 
 
 
@@ -51,15 +51,13 @@ typedef struct node
 {
     struct node* next; // points to next snake node
     box snake_body;// contains the structure for the snakes body part at that node
-    int node_direction; // contains the direction that snake node is facing
-
+    int direction; // contains the direction that snake node is facing
 
 }node;
 
 
 // step 1 create a pointer to our node
 node* snake_node = NULL;
-
 
 //struct body snake_body[SNAKE_SIZE_CAP]; // we create a snake body comprised of body parts which are themselves a simple snake unit
 
@@ -106,7 +104,9 @@ int initialize_window(void) // don't need a function declaration as we are calli
 
 void setup() {
     srand(time((NULL))); // used to set the seed for rand based on current time
-
+    food.color.red = 255;
+    food.color.green = 255;
+    food.color.blue = 255;
 
 
 
@@ -126,6 +126,9 @@ void setup() {
     unit.y = WINDOW_HEIGHT / 2; // snake head will start at midpoint of window height
     unit.width = snake_width;
     unit.height = snake_height;
+    unit.color.red = food.color.red;
+    unit.color.green = food.color.green;
+    unit.color.blue = food.color.blue;
 
     // food will spawn in a random location
     food.x = (rand() % (int)(GAME_WINDOW_WIDTH / 2)) + origin_background_x;
@@ -149,36 +152,12 @@ void setup() {
 
     temp->next = NULL;
 
-
     snake_node = temp;
 
     //now need to free temp
 
-    free(temp);
-
     //Defines the beginning of the snake body by defining the head first
-    snake_node->snake_body.x = unit.x;
-    snake_node->snake_body.y = unit.y;
-    snake_node->snake_body.width = unit.width;
-    snake_node->snake_body.height = unit.height;
-    snake_node->node_direction = direction;
 
-
-
-
-
-    // // sets the existing attribute of each snake body part to be false excluding head
-    //for (int i = 0; i < SNAKE_SIZE_CAP; i++)
-    //{
-    //    snake_body[i].exists = 0;
-    //}
-    //Defines the beginning of the snake body by defining the head first
-    //snake_body[0].body_part.x = unit.x;
-    //snake_body[0].body_part.y = unit.y;
-    //snake_body[0].body_part.width = unit.width;
-    //snake_body[0].body_part.height = unit.height;
-    //snake_body[0].exists = TRUE;
-    //snake_body[0].direction_body = direction;
 
 
 
@@ -236,40 +215,45 @@ void update()
     {
         game_is_running = FALSE;
     }
-    //dummy varaibles for moving snake body parts
-    int dummy_x = 0;
-    int dummy_y = 0;
-    int dummy_direction = 0;
-    int flummy_x = 0;
-    int flummy_y = 0;
-    int flummy_direction = 0;
 
 
+   // step 1 is to move the snake head.
+    node flummy;
+    node dummy;
 
+    flummy = *snake_node;
 
+    snake_node->snake_body.x = unit.x;
+    snake_node->snake_body.y = unit.y;
+    snake_node->snake_body.width = unit.width;
+    snake_node->snake_body.height = unit.height;
 
-    // step 1 is to move the snake head.
+    snake_node->direction = direction;
+    //snake_node->snake_body.red = 255;
+    //snake_node->snake_body.green = 255;
+    //snake_node->snake_body.blue = 255;
+    
+    node* body = snake_node->next;
 
-   flummy_x = snake_node->snake_body.x;
-   flummy_y = snake_node->snake_body.y;
-   flummy_direction = snake_node->node_direction;
-   snake_node->snake_body.x = unit.x;
-   snake_node->snake_body.y = unit.y;
-   snake_node->snake_body.width = unit.width;
-   snake_node->snake_body.height = unit.height;
-   snake_node->node_direction = direction;
+    while (body != NULL) // handles the middle
+    {
+        dummy.snake_body.x = body->snake_body.x;
+        dummy.snake_body.y = body->snake_body.y;
+        dummy.direction = body->direction;
+        body->snake_body.x = flummy.snake_body.x;
+        body->snake_body.y = flummy.snake_body.y;
+        body->direction = flummy.direction;
+        flummy.snake_body.x = dummy.snake_body.x;
+        flummy.snake_body.y = dummy.snake_body.y;
+        flummy.direction = dummy.direction;
+        body = body->next;
 
-
-    //  // moves the snake head storing old position first
-        //flummy_x = snake_body[0].body_part.x;
-        //flummy_y = snake_body[0].body_part.y;
-        //flummy_direction = snake_body[0].direction_body;
-        //snake_body[0].body_part.x = unit.x;
-        //snake_body[0].body_part.y = unit.y;
-
-
-
-
+    }
+    if (body != NULL && body->next == NULL) // handles the last cell
+    {
+        body->snake_body = flummy.snake_body;
+        body->direction = flummy.direction;
+    }
     //: waste some time/ sleep until we reach the frame target
     // what the below does is use the SDL_Ticks_Passed function to compare two time stamps.
     // first time stamp is the current time, second one is the time since the last update ran(or first if its the first update)
@@ -346,97 +330,34 @@ void update()
 
 
     // now we move the snake node body
-
-    dummy_direction = snake_node->node_direction;
-    dummy_x = snake_node->snake_body.x;
-    dummy_y = snake_node->snake_body.y;
-    flummy_x = dummy_x;
-    flummy_y = dummy_y;
-    flummy_direction = dummy_direction;
-
-
-
-        //// moves the snake body
-        //for (int i = 1; i <= food_counter; i++)
-        //{
-
-        //    dummy_direction = snake_body[i].direction_body;
-
-        //    switch (dummy_direction)
-        //    {
-        //    case 0: // moving right
-
-        //        dummy_x = snake_body[i].body_part.x;
-        //        dummy_y = snake_body[i].body_part.y;
-        //        snake_body[i].body_part.x = flummy_x;
-        //        snake_body[i].body_part.y = flummy_y;
-        //        snake_body[i].direction_body = flummy_direction;
-        //        break;
-
-        //    case 1: // moving left
-        //        dummy_x = snake_body[i].body_part.x;
-        //        dummy_y = snake_body[i].body_part.y;
-        //        snake_body[i].body_part.x = flummy_x;
-        //        snake_body[i].body_part.y = flummy_y;
-        //        snake_body[i].direction_body = flummy_direction;
-        //        break;
-
-        //    case 2: // moving up
-        //        dummy_x = snake_body[i].body_part.x;
-        //        dummy_y = snake_body[i].body_part.y;
-        //        snake_body[i].body_part.x = flummy_x;
-        //        snake_body[i].body_part.y = flummy_y;
-        //        snake_body[i].direction_body = flummy_direction;
-        //        break;
-
-        //    case 3: // moving down
-        //        dummy_x = snake_body[i].body_part.x;
-        //        dummy_y = snake_body[i].body_part.y;
-        //        snake_body[i].body_part.x = flummy_x;
-        //        snake_body[i].body_part.y = flummy_y;
-        //        snake_body[i].direction_body = flummy_direction;
-        //        break;
-        //    }
-        //    flummy_x = dummy_x;
-        //    flummy_y = dummy_y;
-        //    flummy_direction = dummy_direction;
-        //    //  for (int i = 1; i < food_counter + 1; i++)
-        //    {
-        //    }
-        //}
-
        // // handles creating a new snake body
         if ((unit.x > food.x - food.width / 1.5 && unit.x < food.x + food.width / 1.5) && (unit.y > food.y - food.height / 1.5 && unit.y < food.y + food.height / 1.5))
         {
             food.x = (rand() % (int)(GAME_WINDOW_WIDTH / 2)) + origin_background_x;
             food.y = (rand() % (int)(GAME_WINDOW_HEIGHT / 2)) + origin_background_y;
             food_counter++;
-           // snake_body[food_counter].exists = TRUE;
-            //snake_body[food_counter].body_part.width = unit.width;
-            //snake_body[food_counter].body_part.height = unit.height;
-            //switch (flummy_direction)
-            //{
-            //case 0: // moving right
-             //   snake_body[food_counter].body_part.x = flummy_x;
-              //  snake_body[food_counter].body_part.y = flummy_y;
-               // break;
 
-           // case 1: // moving left
-            //    snake_body[food_counter].body_part.x = flummy_x;
-             //   snake_body[food_counter].body_part.y = flummy_y;
-              //  break;
 
-           // case 2: // moving up
-            //    snake_body[food_counter].body_part.x = flummy_x;
-             //   snake_body[food_counter].body_part.y = flummy_y;
-              //  break;
+            node* temp = malloc(sizeof(node));
 
-         //   case 3: // moving down
-           //     snake_body[food_counter].body_part.x = flummy_x;
-            //    snake_body[food_counter].body_part.y = flummy_y;
-             //   break;
-            
-            //snake_body[food_counter].direction_body = flummy_direction;
+            if (temp == NULL)
+            {
+                // need to actually add real error handling
+                game_is_running = FALSE;
+            }
+
+            temp->next = snake_node;
+            temp->snake_body = unit;
+            temp->direction = direction;
+            temp->snake_body.color = food.color;
+
+
+            food.color.red = rand() % 255;
+            food.color.green = rand() % 255;
+            food.color.blue = rand() % 255;
+
+            snake_node = temp;
+
 
         }
     //// handles collisions
@@ -479,15 +400,46 @@ void render()
 
     // here we can start the drawing of our objects
     //render snake head first
-    SDL_Rect snake_body_rect =
+    //SDL_Rect snake_body_rect =
+    //{
+    //    (int)snake_node->snake_body.x,
+    //    (int)snake_node->snake_body.y,
+    //    (int)snake_node->snake_body.width,
+    //    (int)snake_node->snake_body.height
+    //};
+    //SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    //SDL_RenderFillRect(renderer, (&snake_body_rect));
+
+
+
+    //SDL_Rect snake_body_rect =
+    //{
+    //    (int)snake_node->snake_body.x,
+    //    (int)snake_node->snake_body.y,
+    //    (int)snake_node->snake_body.width,
+    //    (int)snake_node->snake_body.height
+    //};
+    //SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    //SDL_RenderFillRect(renderer, (&snake_body_rect));
+
+
+    node* flow = snake_node;
+
+
+
+    while (flow != NULL)
     {
-        (int)snake_node->snake_body.x,
-        (int)snake_node->snake_body.y,
-        (int)snake_node->snake_body.width,
-        (int)snake_node->snake_body.height
-    };
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderFillRect(renderer, (&snake_body_rect));
+        SDL_Rect snake_body_flow_rect =
+        {
+            (int)flow->snake_body.x,
+            (int)flow->snake_body.y,
+            (int)flow->snake_body.width,
+            (int)flow->snake_body.height
+        };
+        SDL_SetRenderDrawColor(renderer, snake_node->snake_body.color.red, snake_node->snake_body.color.green, snake_node->snake_body.color.green, 255);
+        SDL_RenderFillRect(renderer, (&snake_body_flow_rect));
+        flow = flow->next;
+    }
 
     // below creates the food 
     SDL_Rect food_rect =
@@ -497,7 +449,7 @@ void render()
         (int)food.width,
         (int)food.height
     };
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_SetRenderDrawColor(renderer, food.color.red, food.color.green, food.color.blue, 255);
     SDL_RenderFillRect(renderer, (&food_rect));
 
 
@@ -533,6 +485,9 @@ void destroy_window()
 
 int main(void)
 {
+
+
+
     game_is_running = initialize_window();
     setup();
     // reason we use game_is_running is that process/update/render will run again the initialize window function and if it fails game will stop
