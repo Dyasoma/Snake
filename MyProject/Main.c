@@ -436,7 +436,7 @@ void render()
             (int)flow->snake_body.width,
             (int)flow->snake_body.height
         };
-        SDL_SetRenderDrawColor(renderer, flow->snake_body.color.red, flow->snake_body.color.green, flow->snake_body.color.green, 255);
+        SDL_SetRenderDrawColor(renderer, snake_node->snake_body.color.red, snake_node->snake_body.color.green, snake_node->snake_body.color.green, 255);
         SDL_RenderFillRect(renderer, (&snake_body_flow_rect));
         flow = flow->next;
     }
