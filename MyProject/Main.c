@@ -9,7 +9,10 @@
 //TODO
 // ADD ERROR HANDLING for all memory allocations
 // ADD SOME FORM OF MEMORY MANAGEMENT
+// 
+// 
 // ADD SCOREBOARD FOR NUMBER OF FOODS EATEN
+// 
 // ADD END GAME WINDOW
 // ADD MAIN MENU
 // ADD SELECTION FOR 1 player or 2 player snake
@@ -22,7 +25,7 @@ SDL_Surface* textSurface = NULL; // assumes address of our surface is set to nul
 SDL_Color colour;
 TTF_Font* font = NULL;
 
-
+char* string_buffer = NULL;
 
 int last_frame_time = 0;
 double origin_background_x = (WINDOW_WIDTH / 2) - GAME_WINDOW_WIDTH / 2; // controls background origin in x
@@ -37,6 +40,7 @@ int food_counter = 0; // counter for how often the snakes eaten food
 int direction = 0; // decides direction of movement of snake defaults to left
 int colission = FALSE;
 
+char* score = NULL;
 
 typedef struct color
 {
@@ -130,7 +134,15 @@ int initialize_window(void) // don't need a function declaration as we are calli
         return FALSE;
     }
 
-    textSurface = TTF_RenderText_Solid(font, "Score", colour);
+
+    score = malloc(sizeof(char) * (9 + 1));
+    if (score == NULL)
+    {
+        fprintf(stderr, "error on allocating memory\n");
+        return FALSE;
+    }
+
+    textSurface = TTF_RenderText_Solid(font, "Score 000", colour);
     //Error handling for text surface
     if (textSurface == NULL)
     {
@@ -138,6 +150,7 @@ int initialize_window(void) // don't need a function declaration as we are calli
         printf(SDL_GetError());
         return FALSE;
     }
+
 
     text = SDL_CreateTextureFromSurface(renderer, textSurface);
     //Error handling for text
@@ -155,11 +168,23 @@ int initialize_window(void) // don't need a function declaration as we are calli
 
 void setup() {
     srand(time((NULL))); // used to set the seed for rand based on current time
-    //
+
+    //textbox stuff -- NOT REALLY BEING USED RIGHT NOW
     text_box.x = 0;
     text_box.y = 0;
     text_box.width = 20;
     text_box.height = 20;
+
+
+    // handles creating score string, located here because our first text and textSurfaces need some text to display
+        // Turns out we don't need to place it in initialization function instead we just put "Score 000" in text function
+    char* transient_string = "Score 000";
+    for (int i = 0; i < strlen(transient_string) + 1; i++)
+    {
+        score[i] = transient_string[i];
+    }
+    string_buffer = malloc(sizeof(char) * 4);
+
 
 
     //sets food to white
@@ -167,11 +192,6 @@ void setup() {
     food.color.green = 255;
     food.color.blue = 255;
 
-
-    //
-
-
-    //TODO:
     // controls the setting of our background fields 
     background.x = 0;
     background.y = 0;
@@ -385,11 +405,33 @@ void update()
     // // handles creating a new snake body
     if ((unit.x > food.x - food.width / 1.5 && unit.x < food.x + food.width / 1.5) && (unit.y > food.y - food.height / 1.5 && unit.y < food.y + food.height / 1.5))
     {
+
+
         // generates random position for next food
         food.x = (rand() % (int)(GAME_WINDOW_WIDTH / 2)) + origin_background_x;
         food.y = (rand() % (int)(GAME_WINDOW_HEIGHT / 2)) + origin_background_y;
+
+
+        //Handles food count and the score change
         food_counter++;
 
+
+
+        //itoa(food_counter, string_buffer, 10);
+        snprintf(string_buffer, 10, "%d", food_counter);
+        int size = strlen(string_buffer);
+        int j = strlen(score);
+        int k = strlen(string_buffer);
+        for (int i = 0; i < size; i++)
+        {
+            //printf("\n");
+            //printf(string_buffer);
+            //printf("\n");
+            score[j - 1 - i] = string_buffer[k - 1 - i];
+            //printf(score);
+            //printf("\n");
+        }
+        // handles linked list stuff for our data structure
         node* temp = malloc(sizeof(node));
 
         if (temp == NULL)
@@ -489,22 +531,14 @@ void render()
     SDL_SetRenderDrawColor(renderer, food.color.red, food.color.green, food.color.blue, 255);
     SDL_RenderFillRect(renderer, (&food_rect));
 
+    // below handles the texture
 
-    //TTF_Font* font = TTF_OpenFont("MyProject/Noto.ttf", 20);
-    //SDL_Color colour = { 255, 255, 255, 255 };
-    ////SDL_Surface* textSurface = TTF_RenderText_Solid(font, foods, colour);
-    //SDL_Texture* text = SDL_CreateTextureFromSurface(renderer, textSurface);
-    // 
-    
-    //SDL_Rect text_rect;
-    //text_rect.x = WINDOW_WIDTH * 0.85;
-    //text_rect.y = 0;
-    //int j = SDL_QueryTexture(text, NULL, NULL, &text_rect.w, &text_rect.h);
-    //if (j != 0)
-    //{
-    //    printf(SDL_GetError());
-    //}
 
+
+
+
+    textSurface = TTF_RenderText_Solid(font, score, colour);
+    text = SDL_CreateTextureFromSurface(renderer, textSurface);
     SDL_Rect text_rect;
     text_rect.x = WINDOW_WIDTH * 0.85;
     text_rect.y = 0;
@@ -516,7 +550,6 @@ void render()
 
     SDL_RenderCopy(renderer, text, NULL, &text_rect);
     SDL_RenderPresent(renderer); // setups buffer for displaying frames
-    
 
 }
 
@@ -541,7 +574,8 @@ void destroy_window()
         free(destroyer);
     }
     free(snake_node);
-
+    free(score);
+    free(string_buffer);
     // Final step is to clear all out pointers
     text = textSurface = font = renderer = window = NULL;
 }
@@ -560,12 +594,6 @@ int main(void)
     }
     // if we can no longer finish the game we must get rid of the memory associated with the window
     destroy_window();
-
-
-
-
-
-
     return 0;
     
 }
