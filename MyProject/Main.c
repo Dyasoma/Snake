@@ -11,10 +11,10 @@
 // ADD SOME FORM OF MEMORY MANAGEMENT
 // 
 // 
-// ADD SCOREBOARD FOR NUMBER OF FOODS EATEN
-// 
 // ADD END GAME WINDOW
+// 
 // ADD MAIN MENU
+// 
 // ADD SELECTION FOR 1 player or 2 player snake
 
 int game_is_running = FALSE; // initially game isn't actually running, similar to flag first down
@@ -424,12 +424,7 @@ void update()
         int k = strlen(string_buffer);
         for (int i = 0; i < size; i++)
         {
-            //printf("\n");
-            //printf(string_buffer);
-            //printf("\n");
             score[j - 1 - i] = string_buffer[k - 1 - i];
-            //printf(score);
-            //printf("\n");
         }
         // handles linked list stuff for our data structure
         node* temp = malloc(sizeof(node));
@@ -451,12 +446,8 @@ void update()
         food.color.red = rand() % 205 + 100;
         food.color.green = rand() % 205 + 100;
         food.color.blue = rand() % 205 + 100;
-
         snake_node = temp;
-
         temp = NULL;
-
-
     }
 
     // handles collisions
@@ -542,12 +533,7 @@ void render()
     SDL_SetRenderDrawColor(renderer, food.color.red, food.color.green, food.color.blue, 255);
     SDL_RenderFillRect(renderer, (&food_rect));
 
-    // below handles the texture
-
-
-
-
-
+    // below handles the text
     textSurface = TTF_RenderText_Solid(font, score, colour);
     text = SDL_CreateTextureFromSurface(renderer, textSurface);
     SDL_Rect text_rect;
@@ -558,7 +544,6 @@ void render()
         printf(SDL_GetError());
         exit(1);
     }
-
     SDL_RenderCopy(renderer, text, NULL, &text_rect);
     SDL_RenderPresent(renderer); // setups buffer for displaying frames
 
