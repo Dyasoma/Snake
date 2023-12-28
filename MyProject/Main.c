@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <SDL_ttf.h>
 #include <SDL.h>
+#include <math.h>
 #include "./constants.h"
 
 //TODO
@@ -10,12 +12,17 @@
 // ADD SCOREBOARD FOR NUMBER OF FOODS EATEN
 // ADD END GAME WINDOW
 // ADD MAIN MENU
-
 // ADD SELECTION FOR 1 player or 2 player snake
 
 int game_is_running = FALSE; // initially game isn't actually running, similar to flag first down
 SDL_Window* window = NULL; // assumes address of our window is set to null, made global such that main can access it
 SDL_Renderer* renderer = NULL; // assumes address of our renderer is set to null, made global such that main can access it
+SDL_Texture* text = NULL; // assumes address of our texture is set to null, made global such that main can access it
+SDL_Surface* textSurface = NULL; // assumes address of our surface is set to null, made global such that main can access it
+SDL_Color colour;
+TTF_Font* font = NULL;
+
+
 
 int last_frame_time = 0;
 double origin_background_x = (WINDOW_WIDTH / 2) - GAME_WINDOW_WIDTH / 2; // controls background origin in x
@@ -29,6 +36,7 @@ int snake_height = SNAKE_SIZE; // controls how tall the snake is from the top le
 int food_counter = 0; // counter for how often the snakes eaten food
 int direction = 0; // decides direction of movement of snake defaults to left
 int colission = FALSE;
+
 
 typedef struct color
 {
@@ -49,6 +57,9 @@ typedef struct box // Main struct for everything
  box play_area; // box that describes the play area casted within the window
  box unit; // snake unit
  box food; // Food for snake
+ box text_box; // text box
+
+ SDL_Color colour = { 255, 255, 255, 255 }; // Color for our texts
 
 typedef struct node
 {
@@ -58,18 +69,26 @@ typedef struct node
 
 }node;
 
-
 // step 1 create a pointer to our node
 node* snake_node = NULL;
 
 int initialize_window(void) // don't need a function declaration as we are calling a function before main
 {
-    // initalizes everything
+    // initalizes SDL
     if ((SDL_Init(SDL_INIT_EVERYTHING)) != 0) // handles the case where initializes fails
     {
         fprintf(stderr, "Error Initializing SDL. \n");
+        printf(SDL_GetError());
         return FALSE; // if we ever fail just lets us know that its false ie failure
     }
+    // initializes TTF
+    if (TTF_Init() != 0)
+    {
+        fprintf(stderr, "Error Initializing TTF \n");
+        printf(SDL_GetError());
+        return FALSE; // if we ever fail just lets us know that its false ie failure
+    }
+
     window = SDL_CreateWindow(
         NULL, // title set it to null so we have a somewhat borderless window
         SDL_WINDOWPOS_CENTERED, //x position of window using SDL parameter that centers by x axis
@@ -79,12 +98,14 @@ int initialize_window(void) // don't need a function declaration as we are calli
         SDL_WINDOW_BORDERLESS // sets our window to be truly borderless
     );
     // window might fail so need to error handle
-
     if (!window)
     {
         fprintf(stderr, "Error creating SDL window\n");
         return FALSE;
     }
+
+
+
     // next up is actually rendering the window
     renderer = SDL_CreateRenderer
     (
@@ -92,22 +113,64 @@ int initialize_window(void) // don't need a function declaration as we are calli
         -1, // next we need to tell sdl what kind of driver will render our window, -1 just says use the default display driver downloaded
         0 //we don't have any special flags ie no special way of renderering
     );
-    // renderer might fail so need to error handle
-    if (!window)
+    // Error handling for renderer
+    if (renderer == NULL)
     {
         fprintf(stderr, "Error rendering SDL window\n");
         return FALSE;
     }
+
+
+    font = TTF_OpenFont("Noto.ttf", 20);
+    //Error handling for font
+    if (font == NULL)
+    {
+        fprintf(stderr, "Error on opening font\n");
+        printf(SDL_GetError());
+        return FALSE;
+    }
+
+    textSurface = TTF_RenderText_Solid(font, "Score", colour);
+    //Error handling for text surface
+    if (textSurface == NULL)
+    {
+        fprintf(stderr, "Error on creating textSurface\n");
+        printf(SDL_GetError());
+        return FALSE;
+    }
+
+    text = SDL_CreateTextureFromSurface(renderer, textSurface);
+    //Error handling for text
+    if (text == NULL)
+    {
+        fprintf(stderr, "Error on creating text\n");
+        printf(SDL_GetError());
+        return FALSE;
+    }
+
     return TRUE;
+
 }
+
 
 void setup() {
     srand(time((NULL))); // used to set the seed for rand based on current time
+    //
+    text_box.x = 0;
+    text_box.y = 0;
+    text_box.width = 20;
+    text_box.height = 20;
+
 
     //sets food to white
     food.color.red = 255;
     food.color.green = 255;
     food.color.blue = 255;
+
+
+    //
+
+
     //TODO:
     // controls the setting of our background fields 
     background.x = 0;
@@ -145,7 +208,10 @@ void setup() {
     temp->next = NULL;
 
     snake_node = temp;
+
+    temp = NULL;
 }
+
 
 void process_input()
 {
@@ -324,7 +390,6 @@ void update()
         food.y = (rand() % (int)(GAME_WINDOW_HEIGHT / 2)) + origin_background_y;
         food_counter++;
 
-
         node* temp = malloc(sizeof(node));
 
         if (temp == NULL)
@@ -337,8 +402,8 @@ void update()
         //linked list stuff. set temp to be the next node in our list, then fill it with info. then set front of the list equal to what temp is pointing to
         temp->next = snake_node;
         temp->snake_body = unit;
-        temp->direction = direction;
         temp->snake_body.color = food.color;
+        temp->direction = direction;
 
         // generates random color for food starting from 50 since I don't want super dark colors
         food.color.red = rand() % 205 + 100;
@@ -346,6 +411,8 @@ void update()
         food.color.blue = rand() % 205 + 100;
 
         snake_node = temp;
+
+        temp = NULL;
 
 
     }
@@ -369,8 +436,12 @@ void update()
 
 void render()
 {
+
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
+
+
+
     SDL_Rect background_rect =
     {
         (int)background.x,
@@ -403,7 +474,7 @@ void render()
             (int)flow->snake_body.width,
             (int)flow->snake_body.height
         };
-        SDL_SetRenderDrawColor(renderer, snake_node->snake_body.color.red, snake_node->snake_body.color.green, snake_node->snake_body.color.green, 255);
+        SDL_SetRenderDrawColor(renderer, snake_node->snake_body.color.red, snake_node->snake_body.color.green, snake_node->snake_body.color.blue, 255);
         SDL_RenderFillRect(renderer, (&snake_body_flow_rect));
         flow = flow->next;
     }
@@ -417,15 +488,65 @@ void render()
     };
     SDL_SetRenderDrawColor(renderer, food.color.red, food.color.green, food.color.blue, 255);
     SDL_RenderFillRect(renderer, (&food_rect));
+
+
+    //TTF_Font* font = TTF_OpenFont("MyProject/Noto.ttf", 20);
+    //SDL_Color colour = { 255, 255, 255, 255 };
+    ////SDL_Surface* textSurface = TTF_RenderText_Solid(font, foods, colour);
+    //SDL_Texture* text = SDL_CreateTextureFromSurface(renderer, textSurface);
+    // 
+    
+    //SDL_Rect text_rect;
+    //text_rect.x = WINDOW_WIDTH * 0.85;
+    //text_rect.y = 0;
+    //int j = SDL_QueryTexture(text, NULL, NULL, &text_rect.w, &text_rect.h);
+    //if (j != 0)
+    //{
+    //    printf(SDL_GetError());
+    //}
+
+    SDL_Rect text_rect;
+    text_rect.x = WINDOW_WIDTH * 0.85;
+    text_rect.y = 0;
+    if (SDL_QueryTexture(text, NULL, NULL, &text_rect.w, &text_rect.h) != 0)
+    {
+        printf(SDL_GetError());
+        exit(1);
+    }
+
+    SDL_RenderCopy(renderer, text, NULL, &text_rect);
     SDL_RenderPresent(renderer); // setups buffer for displaying frames
+    
+
 }
+
+
 void destroy_window()
 {
-    SDL_DestroyRenderer(renderer); // simply put in the thing we want to destroy
+
+    SDL_DestroyTexture(text);
+    SDL_FreeSurface(textSurface);
+    TTF_CloseFont(font);
+    SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    TTF_Quit();
     SDL_Quit();
     // *** NOTE WE DESTORY IN THE REVERSE ORDER WE CREATED, Don't want to orphan any pointers
+    // 
+    // Below destroys linked list for snake data structure
+    while (snake_node->next != NULL)
+    {
+        node* destroyer = snake_node;
+        snake_node = snake_node->next;
+        free(destroyer);
+    }
+    free(snake_node);
+
+    // Final step is to clear all out pointers
+    text = textSurface = font = renderer = window = NULL;
 }
+
+
 int main(void)
 {
     game_is_running = initialize_window();
@@ -439,12 +560,12 @@ int main(void)
     }
     // if we can no longer finish the game we must get rid of the memory associated with the window
     destroy_window();
-    while (snake_node->next != NULL)
-    {
-    node* destroyer = snake_node;
-    snake_node = snake_node->next;
-    free(destroyer);
-    }
-    free(snake_node);
+
+
+
+
+
+
     return 0;
+    
 }
