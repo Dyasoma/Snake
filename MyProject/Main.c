@@ -494,6 +494,17 @@ void render()
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderFillRect(renderer, (&background_rect));
 
+    SDL_Rect playarea_rect =
+    {
+        (int)play_area.x - (play_area.width * 0.01),
+        (int)play_area.y - (play_area.height * 0.01),
+        (int)play_area.width + ( 2 *play_area.width * 0.01),
+        (int)play_area.height + (2 * play_area.height * 0.01)
+    };
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderFillRect(renderer, (&playarea_rect));
+
+
     // below creates background for main play area
     SDL_Rect play_area_background_rect =
     {
