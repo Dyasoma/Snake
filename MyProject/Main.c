@@ -28,11 +28,10 @@ SDL_Renderer* renderer = NULL; // assumes address of our renderer is set to null
     // 
     //TTF texts
 SDL_Texture* text = NULL; // assumes address of our texture is set to null, made global such that main can access it
-SDL_Texture* menu_text = NULL;
 SDL_Surface* textSurface = NULL; // assumes address of our surface is set to null, made global such that main can access it
-SDL_Surface* menu_textSurface = NULL;
+
 TTF_Font* font = NULL;
-TTF_Font* menu_font = NULL;
+
 char* string_buffer = NULL; //buffer for changing scores
 char* score = NULL;
 SDL_Color black_colour = { 0, 0, 0, 255 };
@@ -44,6 +43,7 @@ SDL_Color colour = { 255, 255, 255, 255 }; // Color for our texts
 //GAME CONTROL
 int game_state = 0;
 int game_1_setup_complete = FALSE;
+int endgame_1_setup_complete = FALSE;
 //GAME CONTROL
 
 
@@ -114,8 +114,37 @@ double origin_background_y = (WINDOW_HEIGHT / 2) - GAME_WINDOW_HEIGHT / 2; // co
 box selection_1_player_box;
 box selection_2_player_box;
 box selection_exit_box;
+TTF_Font* menu_font = NULL;// font for main menu
+
+SDL_Texture* menu_text_1 = NULL; //text for 1 player 
+SDL_Surface* menu_textSurface_1 = NULL; //textSurface for 1 player 
+SDL_Rect selection_1_player_rect;//rect for 2 player selection
+
+SDL_Texture* menu_text_2 = NULL; //text for 2 player selection
+SDL_Surface* menu_textSurface_2 = NULL;//textSurace for 2 player selection
+SDL_Rect selection_2_player_rect;//rect for 2 player selection
+
+
+SDL_Texture* menu_text_exit = NULL;// exit button text
+SDL_Surface* menu_textSurface_exit = NULL;// exit button textSurface
+SDL_Rect selection_exit_player_rect;// rect for exit button
+
+
 //MAIN MENU INFORMATION
 
+
+//SCORE INFORMATION
+TTF_Font* score_font = NULL;
+SDL_Texture* score_text = NULL;// exit button text
+SDL_Surface* score_textSurface = NULL;// exit button textSurface
+SDL_Rect score_text_rect;// rect for exit button
+//SCORE INFORMATION
+//SCORE INFORMATION
+
+//ENDGAME SCREEN
+char* final_score = NULL;
+
+//
 
 
 
@@ -249,6 +278,113 @@ void setup_main_menu() {
     selection_exit_box.color.green = 255;
     selection_exit_box.color.blue = 255;
     //main menu
+
+
+
+    //Main_Menu fonts/text handling
+    ////selection 1
+    menu_font = TTF_OpenFont("Noto.ttf", MENU_FONT_SIZE);
+        //Error handling for font
+        if (menu_font == NULL)
+    {
+        fprintf(stderr, "Error on opening font\n");
+        printf(SDL_GetError());
+        return FALSE;
+    }
+    menu_textSurface_1 = TTF_RenderText_Shaded(menu_font, "1 PLAYER MODE", black_colour, colour);
+        //Error handling for text surface
+        if (menu_textSurface_1 == NULL)
+    {
+        fprintf(stderr, "Error on creating textSurface\n");
+        printf(SDL_GetError());
+        return FALSE;
+    }
+
+    menu_text_1 = SDL_CreateTextureFromSurface(renderer, menu_textSurface_1);
+        //Error handling for text
+        if (menu_text_1 == NULL)
+    {
+        fprintf(stderr, "Error on creating text\n");
+        printf(SDL_GetError());
+        return FALSE;
+    }
+    selection_1_player_rect.x = selection_1_player_box.x;
+    selection_1_player_rect.y = selection_1_player_box.y;
+    if (SDL_QueryTexture(menu_text_1, NULL, NULL, &selection_1_player_rect.w, &selection_1_player_rect.h) != 0)
+    {
+        printf(SDL_GetError());
+        exit(1);
+    }
+
+    ////selection 2 
+    menu_textSurface_2 = TTF_RenderText_Shaded(menu_font, "2 PLAYER MODE", black_colour, colour);
+        //Error handling for text surface
+    if (menu_textSurface_2 == NULL)
+    {
+        fprintf(stderr, "Error on creating textSurface\n");
+        printf(SDL_GetError());
+        return FALSE;
+    }
+
+    menu_text_2 = SDL_CreateTextureFromSurface(renderer, menu_textSurface_2);
+        //Error handling for text
+        if (menu_text_2 == NULL)
+    {
+        fprintf(stderr, "Error on creating text\n");
+        printf(SDL_GetError());
+        return FALSE;
+    }
+    selection_2_player_rect.x = selection_2_player_box.x;
+    selection_2_player_rect.y = selection_2_player_box.y;
+        if (SDL_QueryTexture(menu_text_2, NULL, NULL, &selection_2_player_rect.w, &selection_2_player_rect.h) != 0)
+    {
+        printf(SDL_GetError());
+        exit(1);
+    }
+
+    ////exit button
+    menu_textSurface_exit = TTF_RenderText_Shaded(menu_font, "X", black_colour, colour);
+        //Error handling for text surface
+        if (menu_textSurface_exit == NULL)
+    {
+        fprintf(stderr, "Error on creating textSurface\n");
+        printf(SDL_GetError());
+        return FALSE;
+    }
+    menu_text_exit = SDL_CreateTextureFromSurface(renderer, menu_textSurface_exit);
+        //Error handling for text
+        if (menu_text_exit == NULL)
+    {
+        fprintf(stderr, "Error on creating text\n");
+        printf(SDL_GetError());
+        return FALSE;
+    }
+    selection_exit_player_rect.x = selection_exit_box.x;
+    selection_exit_player_rect.y = selection_exit_box.y;
+        if (SDL_QueryTexture(menu_text_exit, NULL, NULL, &selection_exit_player_rect.w, &selection_exit_player_rect.h) != 0)
+    {
+        printf(SDL_GetError());
+        exit(1);
+    }
+        // strectches texture
+        selection_exit_player_rect.x = WINDOW_WIDTH - WINDOW_WIDTH * 0.05;
+        selection_exit_player_rect.y = 0;
+        selection_exit_player_rect.w = WINDOW_WIDTH * 0.05;
+        selection_exit_player_rect.h = WINDOW_HEIGHT * 0.05;
+    //Main_menu Fonts/text handling
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 void setup_1_player() {
     srand(time((NULL))); // used to set the seed for rand based on current time
@@ -301,7 +437,80 @@ void setup_1_player() {
 
     temp = NULL;
 }
-//setups
+void setup_1_endgame()
+{
+
+    char* endgame_message = "FINAL SCORE: 000";
+
+    final_score = malloc(sizeof(char) * (strlen(endgame_message) + 1));
+    if (final_score == NULL)
+    {
+        fprintf(stderr, "error on allocating memory\n");
+        exit(1);
+    }
+
+    for (int i = 0; i < strlen(endgame_message) + 1; i++)
+    {
+        final_score[i] = endgame_message[i];
+    }
+
+
+    int size = strlen(string_buffer);
+    int j = strlen(final_score);
+    int k = strlen(string_buffer);
+
+    for (int i = 0; i < size; i++)
+    {
+        final_score[j - 1 - i] = string_buffer[k - 1 - i];
+    }
+
+
+
+    //string_buffer
+
+
+    score_font = TTF_OpenFont("Noto.ttf", MENU_FONT_SIZE + 50);
+    //Error handling for font
+    if (score_font == NULL)
+    {
+        fprintf(stderr, "Error on opening font\n");
+        printf(SDL_GetError());
+        return FALSE;
+    }
+    score_textSurface = TTF_RenderText_Solid(score_font, final_score, colour);
+    //Error handling for text surface
+    if (score_textSurface == NULL)
+    {
+        fprintf(stderr, "Error on creating textSurface\n");
+        printf(SDL_GetError());
+        return FALSE;
+    }
+    score_text = SDL_CreateTextureFromSurface(renderer, score_textSurface);
+    //Error handling for text
+    if (score_text == NULL)
+    {
+        fprintf(stderr, "Error on creating text\n");
+        printf(SDL_GetError());
+        return FALSE;
+    }
+    // below handles the text
+
+ 
+  
+    if (SDL_QueryTexture(text, NULL, NULL, &score_text_rect.w, &score_text_rect.h) != 0)
+    {
+        printf(SDL_GetError());
+        exit(1);
+    
+    
+    }
+    score_text_rect.w = score_text_rect.w * WINDOW_RATIO * 2;
+    score_text_rect.h = score_text_rect.h * WINDOW_RATIO * 2;
+
+    score_text_rect.x = WINDOW_WIDTH * 0.50 - (score_text_rect.w * 0.5);
+    score_text_rect.y = WINDOW_HEIGHT * 0.50 - (score_text_rect.h * 0.5);
+}
+
 
 
 //game state loops
@@ -322,7 +531,7 @@ void inputs_main_menu()
         if (SDL_BUTTON_LEFT == event.button.button)
         {
             left_click = TRUE;
-            printf("BUTTON IS PRESSED");
+            //printf("BUTTON IS PRESSED");
         }
         break;
     }
@@ -337,10 +546,10 @@ void inputs_main_menu()
 void update_main_menu()
 {
     //handles selecting first box
-    if ((mouse_pos_x > selection_1_player_box.x) 
-        && (mouse_pos_x < selection_1_player_box.x + selection_1_player_box.width)
-        && mouse_pos_y > selection_1_player_box.y
-        && (mouse_pos_y < selection_1_player_box.y + selection_1_player_box.height)
+    if ((mouse_pos_x > selection_1_player_rect.x)
+        && (mouse_pos_x < selection_1_player_rect.x + selection_1_player_rect.w)
+        && mouse_pos_y > selection_1_player_rect.y
+        && (mouse_pos_y < selection_1_player_rect.y + selection_1_player_rect.h)
         && left_click == TRUE)
     {
         game_state = 1;
@@ -382,136 +591,20 @@ void render_main_menu()
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderFillRect(renderer, (&background_rect));
 
+    //renders the 1 player selection option in main_menu
+    SDL_RenderCopy(renderer, menu_text_1, NULL, &selection_1_player_rect);
 
-
-
-    // below handles the text
-    menu_font = TTF_OpenFont("Noto.ttf", 70);
-    //Error handling for font
-    if (menu_font == NULL)
-    {
-        fprintf(stderr, "Error on opening font\n");
-        printf(SDL_GetError());
-        return FALSE;
-    }
-
-    menu_textSurface = TTF_RenderText_Shaded(menu_font, "1 PLAYER MODE", black_colour, colour);
-    //Error handling for text surface
-    if (menu_textSurface == NULL)
-    {
-        fprintf(stderr, "Error on creating textSurface\n");
-        printf(SDL_GetError());
-        return FALSE;
-    }
-
-    menu_text = SDL_CreateTextureFromSurface(renderer, menu_textSurface);
-    //Error handling for text
-    if (menu_text == NULL)
-    {
-        fprintf(stderr, "Error on creating text\n");
-        printf(SDL_GetError());
-        return FALSE;
-    }
-    SDL_Rect selection_1_player_rect =
-    {
-        selection_1_player_box.x,
-        selection_1_player_box.y
-    };
-    if (SDL_QueryTexture(menu_text, NULL, NULL, &selection_1_player_rect.w, &selection_1_player_rect.h) != 0)
-    {
-        printf(SDL_GetError());
-        exit(1);
-    }
-    SDL_RenderCopy(renderer, menu_text, NULL, &selection_1_player_rect);
+    //renders the 2 player selection option in main_menu
+    SDL_RenderCopy(renderer, menu_text_2, NULL, &selection_2_player_rect);
 
 
 
 
 
-    menu_textSurface = TTF_RenderText_Shaded(menu_font, "2 PLAYER MODE", black_colour, colour);
-    //Error handling for text surface
-    if (menu_textSurface == NULL)
-    {
-        fprintf(stderr, "Error on creating textSurface\n");
-        printf(SDL_GetError());
-        return FALSE;
-    }
+    //renders the exit button for main_menu
+    SDL_RenderCopy(renderer, menu_text_exit, NULL, &selection_exit_player_rect);
 
-    menu_text = SDL_CreateTextureFromSurface(renderer, menu_textSurface);
-    //Error handling for text
-    if (menu_text == NULL)
-    {
-        fprintf(stderr, "Error on creating text\n");
-        printf(SDL_GetError());
-        return FALSE;
-    }
-    SDL_Rect selection_2_player_rect =
-    {
-        selection_2_player_box.x,
-        selection_2_player_box.y
-    };
-    if (SDL_QueryTexture(menu_text, NULL, NULL, &selection_2_player_rect.w, &selection_2_player_rect.h) != 0)
-    {
-        printf(SDL_GetError());
-        exit(1);
-    }
-    SDL_RenderCopy(renderer, menu_text, NULL, &selection_2_player_rect);
-
-    /*SDL_Rect selection_2_player_rect =
-    {
-        selection_2_player_box.x,
-        selection_2_player_box.y,
-        selection_2_player_box.width,
-        selection_2_player_box.height
-    };
-    SDL_SetRenderDrawColor(renderer, selection_2_player_box.color.red, selection_2_player_box.color.green, selection_2_player_box.color.blue, 255);
-    SDL_RenderFillRect(renderer, (&selection_2_player_rect));*/
-
-
-    menu_font = TTF_OpenFont("Noto.ttf", 78);
-
-    menu_textSurface = TTF_RenderText_Shaded(menu_font, "X", black_colour, colour);
-    //Error handling for text surface
-    if (menu_textSurface == NULL)
-    {
-        fprintf(stderr, "Error on creating textSurface\n");
-        printf(SDL_GetError());
-        return FALSE;
-    }
-
-    menu_text = SDL_CreateTextureFromSurface(renderer, menu_textSurface);
-    //Error handling for text
-    if (menu_text == NULL)
-    {
-        fprintf(stderr, "Error on creating text\n");
-        printf(SDL_GetError());
-        return FALSE;
-    }
-    SDL_Rect selection_exit_rect =
-    {
-        selection_exit_box.x,
-        selection_exit_box.y
-    };
-    if (SDL_QueryTexture(menu_text, NULL, NULL, &selection_exit_rect.w, &selection_exit_rect.h) != 0)
-    {
-        printf(SDL_GetError());
-        exit(1);
-    }
-    SDL_RenderCopy(renderer, menu_text, NULL, &selection_exit_rect);
-
-
-    /*SDL_Rect selection_exit_rect =
-    {
-        selection_exit_box.x,
-        selection_exit_box.y,
-        selection_exit_box.width,
-        selection_exit_box.height
-    };
-    SDL_SetRenderDrawColor(renderer, selection_exit_box.color.red, selection_exit_box.color.green, selection_exit_box.color.blue, 255);
-    SDL_RenderFillRect(renderer, (&selection_exit_rect));*/
-
-
-
+    //presents render
     SDL_RenderPresent(renderer); // setups buffer for displaying frames
 
 }
@@ -526,6 +619,16 @@ void inputs_1_player()
     case SDL_QUIT: // Refers to the event corresponding to clicking the exit button
         app_is_running = FALSE; // changes game to false kicking us out of the game loop
         break;
+    case SDL_MOUSEBUTTONDOWN:
+    {
+        SDL_GetMouseState(&mouse_pos_x, &mouse_pos_y);
+        if (SDL_BUTTON_LEFT == event.button.button)
+        {
+            left_click = TRUE;
+            //printf("BUTTON IS PRESSED");
+        }
+        break;
+    }
     case SDL_KEYDOWN:
         if (event.key.keysym.sym == SDLK_RIGHT && direction != 1) // if they press right arrow and we  aren't moving left
         {
@@ -565,185 +668,197 @@ void update_1_player()
     {
         game_state = 3;
     }
-
-
-   // step 1 is to move the snake head ie the beginning of our linked list
-
-    // two temporary dummy variables
-    node flummy;
-    node dummy;
-
-    // need 2 dummy variables as we want to do a continous swap shuffling entire linked list forward
-        // as opposed to a simple swap which requires only 1 dummy variable we need 2 to do a synchronized shuffle 
-
-    // store current data of the head of the snake-- also the head of our linked list
-    flummy = *snake_node;
-
-    // changes values of snake_node to be the values associated with the current unit values(the ones that change due to pressing arrow keys)
-    snake_node->snake_body.x = unit.x;
-    snake_node->snake_body.y = unit.y;
-    snake_node->snake_body.width = unit.width;
-    snake_node->snake_body.height = unit.height;
-    snake_node->direction = direction;
-
-    
-    node* body = snake_node->next;
-
-    if (body == NULL)
+    else
     {
-        // skip
-    }
-    
-    else if (body != NULL && body->next != NULL)
-    {
-        while (body != NULL) // handles the middle as we have 2 nodes to shuffle
+        if ((mouse_pos_x > WINDOW_WIDTH - 50)
+            && (mouse_pos_x < WINDOW_WIDTH)
+            && mouse_pos_y > 0
+            && (mouse_pos_y < 50)
+            && left_click == TRUE)
         {
-
-            dummy.snake_body.x = body->snake_body.x;
-            dummy.snake_body.y = body->snake_body.y;
-            dummy.direction = body->direction;
-            body->snake_body.x = flummy.snake_body.x;
-            body->snake_body.y = flummy.snake_body.y;
-            body->direction = flummy.direction;
-            flummy.snake_body.x = dummy.snake_body.x;
-            flummy.snake_body.y = dummy.snake_body.y;
-            flummy.direction = dummy.direction;
-            body = body->next;
-
-        }
-    }
-    else if (body != NULL && body->next == NULL) // handles the last cell, last cells next is null so its special just like the first part of our linked list
-    {
-        body->snake_body = flummy.snake_body;
-        body->direction = flummy.direction;
-    }
-    //: waste some time/ sleep until we reach the frame target
-    // what the below does is use the SDL_Ticks_Passed function to compare two time stamps.
-    // first time stamp is the current time, second one is the time since the last update ran(or first if its the first update)
-    // plus the target time. 
-    // SDL_TICKS_PASSED will check if we've waited long enough and if we have will continue the loop
-    // but what we actually want is for the loop to continue so long as the time hasn't been reached so we use a not operator.
-    // Loop will continue until they match.
-    //  while (!SDL_TICKS_PASSED(SDL_GetTicks(), last_frame_time + FRAME_TARGET_TIME));
-
-        //while loop cpu heavy, so we use SDL_Delay
-
-    int time_to_wait = (FRAME_TARGET_TIME - (SDL_GetTicks() - last_frame_time));
-
-    if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME)
-    {
-        SDL_Delay(time_to_wait);
-    }
-
-
-    //Issue: Currently motion of objects is in reference to pixels/frame but we want to represent it as pixels/second
-
-    // what the below does is create the delta_time variable by taking current time, subtracting previous update time
-    // since it returns as milliseconds we divide by 1000 as a float to get back seconds
-    float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
-
-    //originally motion was determined by the frame rate,
-    //if we had 120 frames we would move 2 pixels in each frame therefore 240 pixels in 1 second
-    //versus if we had 60 frames we would be moving 2 pixels for every single 60 frames so in 1 second you would move 120 pixels
-
-    // before we added delta_time as a factor objects moved a greater distance over the same time when we had higher frames
-    // Once we've added delta_time factor, objects move the same distance regardless of the framerate
-
-
-    // Logic to keep a fixed timestamp
-    {
-        last_frame_time = SDL_GetTicks();
-        // the below handles the motion of the main unit
-        if (direction == 0)
-        {
-            unit.x += ((SPEED + food_counter * 2) * delta_time);
-        }
-        else if (direction == 1)
-        {
-            unit.x -= ((SPEED + food_counter * 2) * delta_time);
-        }
-        else if (direction == 2)
-        {
-            unit.y -= ((SPEED + food_counter * 2) * delta_time); // we subtract in up direction since pixels are drawn from top left to bottom right ie 3 in y is higher than 111 in y
-        }
-        else if (direction == 3)
-        {
-            unit.y += ((SPEED + food_counter * 2) * delta_time);
-        }
-    }
-    // Map Wrap around
-    {
-        if (unit.x < origin_background_x)
-            unit.x = WINDOW_WIDTH - (origin_background_x + snake_width);
-        if (unit.x > WINDOW_WIDTH - origin_background_x - snake_width)
-            unit.x = origin_background_x;
-        if (unit.y < origin_background_y)
-            unit.y = WINDOW_HEIGHT - (origin_background_y + snake_height);
-        if (unit.y > WINDOW_HEIGHT - origin_background_y - snake_height)
-            unit.y = origin_background_y;
-    }
-
-    // // handles creating a new snake body
-    if ((unit.x > food.x - food.width / 1.5 && unit.x < food.x + food.width / 1.5) && (unit.y > food.y - food.height / 1.5 && unit.y < food.y + food.height / 1.5))
-    {
-
-
-        // generates random position for next food
-        food.x = (rand() % (int)(GAME_WINDOW_WIDTH / 2)) + origin_background_x;
-        food.y = (rand() % (int)(GAME_WINDOW_HEIGHT / 2)) + origin_background_y;
-
-
-        //Handles food count and the score change
-        food_counter++;
-
-
-
-        //itoa(food_counter, string_buffer, 10);
-        snprintf(string_buffer, 10, "%d", food_counter);
-        int size = strlen(string_buffer);
-        int j = strlen(score);
-        int k = strlen(string_buffer);
-        for (int i = 0; i < size; i++)
-        {
-            score[j - 1 - i] = string_buffer[k - 1 - i];
-        }
-        // handles linked list stuff for our data structure
-        node* temp = malloc(sizeof(node));
-
-        if (temp == NULL)
-        {
-            // need to actually add real error handling
-
             app_is_running = FALSE;
-            exit(1);
+            left_click = FALSE;
         }
-        //linked list stuff. set temp to be the next node in our list, then fill it with info. then set front of the list equal to what temp is pointing to
-        temp->next = snake_node;
-        temp->snake_body = unit;
-        temp->snake_body.color = food.color;
-        temp->direction = direction;
 
-        // generates random color for food starting from 50 since I don't want super dark colors
-        food.color.red = rand() % 205 + 100;
-        food.color.green = rand() % 205 + 100;
-        food.color.blue = rand() % 205 + 100;
-        snake_node = temp;
-        temp = NULL;
-    }
+        // step 1 is to move the snake head ie the beginning of our linked list
 
-    // handles collisions
-    if (food_counter > 3)
-    {
-        node* m = snake_node->next->next;
-        while (m != NULL)
+         // two temporary dummy variables
+        node flummy;
+        node dummy;
+
+        // need 2 dummy variables as we want to do a continous swap shuffling entire linked list forward
+            // as opposed to a simple swap which requires only 1 dummy variable we need 2 to do a synchronized shuffle 
+
+        // store current data of the head of the snake-- also the head of our linked list
+        flummy = *snake_node;
+
+        // changes values of snake_node to be the values associated with the current unit values(the ones that change due to pressing arrow keys)
+        snake_node->snake_body.x = unit.x;
+        snake_node->snake_body.y = unit.y;
+        snake_node->snake_body.width = unit.width;
+        snake_node->snake_body.height = unit.height;
+        snake_node->direction = direction;
+
+
+        node* body = snake_node->next;
+
+        if (body == NULL)
         {
-            if (snake_node->snake_body.x > m->snake_body.x - (float) SNAKE_SIZE / 10 && snake_node->snake_body.x < m->snake_body.x + (float) SNAKE_SIZE / 10 && snake_node->snake_body.y > m->snake_body.y - (float) SNAKE_SIZE / 10 && snake_node->snake_body.y < m->snake_body.y + (float) SNAKE_SIZE / 10)
+            // skip
+        }
+
+        else if (body != NULL && body->next != NULL)
+        {
+            while (body != NULL) // handles the middle as we have 2 nodes to shuffle
             {
-                collisions = TRUE;
+
+                dummy.snake_body.x = body->snake_body.x;
+                dummy.snake_body.y = body->snake_body.y;
+                dummy.direction = body->direction;
+                body->snake_body.x = flummy.snake_body.x;
+                body->snake_body.y = flummy.snake_body.y;
+                body->direction = flummy.direction;
+                flummy.snake_body.x = dummy.snake_body.x;
+                flummy.snake_body.y = dummy.snake_body.y;
+                flummy.direction = dummy.direction;
+                body = body->next;
+
             }
-            m = m->next;
+        }
+        else if (body != NULL && body->next == NULL) // handles the last cell, last cells next is null so its special just like the first part of our linked list
+        {
+            body->snake_body = flummy.snake_body;
+            body->direction = flummy.direction;
+        }
+        //: waste some time/ sleep until we reach the frame target
+        // what the below does is use the SDL_Ticks_Passed function to compare two time stamps.
+        // first time stamp is the current time, second one is the time since the last update ran(or first if its the first update)
+        // plus the target time. 
+        // SDL_TICKS_PASSED will check if we've waited long enough and if we have will continue the loop
+        // but what we actually want is for the loop to continue so long as the time hasn't been reached so we use a not operator.
+        // Loop will continue until they match.
+        //  while (!SDL_TICKS_PASSED(SDL_GetTicks(), last_frame_time + FRAME_TARGET_TIME));
+
+            //while loop cpu heavy, so we use SDL_Delay
+
+        int time_to_wait = (FRAME_TARGET_TIME - (SDL_GetTicks() - last_frame_time));
+
+        if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME)
+        {
+            SDL_Delay(time_to_wait);
+        }
+
+
+        //Issue: Currently motion of objects is in reference to pixels/frame but we want to represent it as pixels/second
+
+        // what the below does is create the delta_time variable by taking current time, subtracting previous update time
+        // since it returns as milliseconds we divide by 1000 as a float to get back seconds
+        float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
+
+        //originally motion was determined by the frame rate,
+        //if we had 120 frames we would move 2 pixels in each frame therefore 240 pixels in 1 second
+        //versus if we had 60 frames we would be moving 2 pixels for every single 60 frames so in 1 second you would move 120 pixels
+
+        // before we added delta_time as a factor objects moved a greater distance over the same time when we had higher frames
+        // Once we've added delta_time factor, objects move the same distance regardless of the framerate
+
+
+        // Logic to keep a fixed timestamp
+        {
+            last_frame_time = SDL_GetTicks();
+            // the below handles the motion of the main unit
+            if (direction == 0)
+            {
+                unit.x += ((SPEED + food_counter * 2) * delta_time);
+            }
+            else if (direction == 1)
+            {
+                unit.x -= ((SPEED + food_counter * 2) * delta_time);
+            }
+            else if (direction == 2)
+            {
+                unit.y -= ((SPEED + food_counter * 2) * delta_time); // we subtract in up direction since pixels are drawn from top left to bottom right ie 3 in y is higher than 111 in y
+            }
+            else if (direction == 3)
+            {
+                unit.y += ((SPEED + food_counter * 2) * delta_time);
+            }
+        }
+        // Map Wrap around
+        {
+            if (unit.x < origin_background_x)
+                unit.x = WINDOW_WIDTH - (origin_background_x + snake_width);
+            if (unit.x > WINDOW_WIDTH - origin_background_x - snake_width)
+                unit.x = origin_background_x;
+            if (unit.y < origin_background_y)
+                unit.y = WINDOW_HEIGHT - (origin_background_y + snake_height);
+            if (unit.y > WINDOW_HEIGHT - origin_background_y - snake_height)
+                unit.y = origin_background_y;
+        }
+
+        // // handles creating a new snake body
+        if ((unit.x > food.x - food.width / 1.5 && unit.x < food.x + food.width / 1.5) && (unit.y > food.y - food.height / 1.5 && unit.y < food.y + food.height / 1.5))
+        {
+
+
+            // generates random position for next food
+            food.x = (rand() % (int)(GAME_WINDOW_WIDTH / 2)) + origin_background_x;
+            food.y = (rand() % (int)(GAME_WINDOW_HEIGHT / 2)) + origin_background_y;
+
+
+            //Handles food count and the score change
+            food_counter++;
+
+
+
+            //itoa(food_counter, string_buffer, 10);
+            snprintf(string_buffer, 10, "%d", food_counter);
+            int size = strlen(string_buffer);
+            int j = strlen(score);
+            int k = strlen(string_buffer);
+            for (int i = 0; i < size; i++)
+            {
+                score[j - 1 - i] = string_buffer[k - 1 - i];
+            }
+            // handles linked list stuff for our data structure
+            node* temp = malloc(sizeof(node));
+
+            if (temp == NULL)
+            {
+                // need to actually add real error handling
+
+                app_is_running = FALSE;
+                exit(1);
+            }
+            //linked list stuff. set temp to be the next node in our list, then fill it with info. then set front of the list equal to what temp is pointing to
+            temp->next = snake_node;
+            temp->snake_body = unit;
+            temp->snake_body.color = food.color;
+            temp->direction = direction;
+
+            // generates random color for food starting from 50 since I don't want super dark colors
+            food.color.red = rand() % 205 + 100;
+            food.color.green = rand() % 205 + 100;
+            food.color.blue = rand() % 205 + 100;
+            snake_node = temp;
+            temp = NULL;
+        }
+
+        // handles collisions
+        if (food_counter > 3)
+        {
+            node* m = snake_node->next->next;
+            while (m != NULL)
+            {
+                if (snake_node->snake_body.x > m->snake_body.x - (float)SNAKE_SIZE / 10 && snake_node->snake_body.x < m->snake_body.x + (float)SNAKE_SIZE / 10 && snake_node->snake_body.y > m->snake_body.y - (float)SNAKE_SIZE / 10 && snake_node->snake_body.y < m->snake_body.y + (float)SNAKE_SIZE / 10)
+                {
+                    collisions = TRUE;
+                }
+                m = m->next;
+            }
         }
     }
+    
 
 }
 void render_1_player()
@@ -819,14 +934,21 @@ void render_1_player()
     textSurface = TTF_RenderText_Shaded(font, score, black_color, colour);
     text = SDL_CreateTextureFromSurface(renderer, textSurface);
     SDL_Rect text_rect;
-    text_rect.x = WINDOW_WIDTH * 0.85;
-    text_rect.y = 0;
+
     if (SDL_QueryTexture(text, NULL, NULL, &text_rect.w, &text_rect.h) != 0)
     {
         printf(SDL_GetError());
         exit(1);
     }
+    text_rect.x = WINDOW_WIDTH *0.5 - (text_rect.w * 0.5);
+    text_rect.y = 0;
     SDL_RenderCopy(renderer, text, NULL, &text_rect);
+
+
+    //renders the exit button
+    SDL_RenderCopy(renderer, menu_text_exit, NULL, &selection_exit_player_rect);
+
+
     SDL_RenderPresent(renderer); // setups buffer for displaying frames
 
 }
@@ -847,7 +969,7 @@ void inputs_endgame_1()
         if (SDL_BUTTON_LEFT == event.button.button)
         {
             left_click = TRUE;
-            printf("BUTTON IS PRESSED");
+            //printf("BUTTON IS PRESSED");
         }
         break;
     }
@@ -870,6 +992,13 @@ void update_endgame_1()
         app_is_running = FALSE;
         left_click = FALSE;
     }
+
+
+
+
+
+
+
 }
 void render_endgame_1()
 {
@@ -888,90 +1017,9 @@ void render_endgame_1()
 
 
 
-        menu_font = TTF_OpenFont("Noto.ttf", 78);
-
-    menu_textSurface = TTF_RenderText_Shaded(menu_font, "X", black_colour, colour);
-    //Error handling for text surface
-    if (menu_textSurface == NULL)
-    {
-        fprintf(stderr, "Error on creating textSurface\n");
-        printf(SDL_GetError());
-        return FALSE;
-    }
-
-    menu_text = SDL_CreateTextureFromSurface(renderer, menu_textSurface);
-    //Error handling for text
-    if (menu_text == NULL)
-    {
-        fprintf(stderr, "Error on creating text\n");
-        printf(SDL_GetError());
-        return FALSE;
-    }
-    SDL_Rect selection_exit_rect =
-    {
-        selection_exit_box.x,
-        selection_exit_box.y
-    };
-    if (SDL_QueryTexture(menu_text, NULL, NULL, &selection_exit_rect.w, &selection_exit_rect.h) != 0)
-    {
-        printf(SDL_GetError());
-        exit(1);
-    }
-    SDL_RenderCopy(renderer, menu_text, NULL, &selection_exit_rect);
-
-
-   /* SDL_Rect selection_exit_rect =
-    {
-        selection_exit_box.x,
-        selection_exit_box.y,
-        selection_exit_box.width,
-        selection_exit_box.height
-    };
-    SDL_SetRenderDrawColor(renderer, selection_exit_box.color.red, selection_exit_box.color.green, selection_exit_box.color.blue, 255);
-    SDL_RenderFillRect(renderer, (&selection_exit_rect));*/
-
-    SDL_DestroyTexture(text);
-    SDL_FreeSurface(textSurface);
-    TTF_CloseFont(font);
-
-
-
-    font = TTF_OpenFont("Noto.ttf", 40);
-    //Error handling for font
-    if (font == NULL)
-    {
-        fprintf(stderr, "Error on opening font\n");
-        printf(SDL_GetError());
-        return FALSE;
-    }
-    textSurface = TTF_RenderText_Solid(font, score, colour);
-    //Error handling for text surface
-    if (textSurface == NULL)
-    {
-        fprintf(stderr, "Error on creating textSurface\n");
-        printf(SDL_GetError());
-        return FALSE;
-    }
-    text = SDL_CreateTextureFromSurface(renderer, textSurface);
-    //Error handling for text
-    if (text == NULL)
-    {
-        fprintf(stderr, "Error on creating text\n");
-        printf(SDL_GetError());
-        return FALSE;
-    }
-    // below handles the text
-    textSurface = TTF_RenderText_Solid(font, score, colour);
-    text = SDL_CreateTextureFromSurface(renderer, textSurface);
-    SDL_Rect text_rect;
-    text_rect.x = WINDOW_WIDTH * 0.50;
-    text_rect.y = WINDOW_HEIGHT * 0.50;
-    if (SDL_QueryTexture(text, NULL, NULL, &text_rect.w, &text_rect.h) != 0)
-    {
-        printf(SDL_GetError());
-        exit(1);
-    }
-    SDL_RenderCopy(renderer, text, NULL, &text_rect);
+    //renders the exit button
+    SDL_RenderCopy(renderer, menu_text_exit, NULL, &selection_exit_player_rect);
+    SDL_RenderCopy(renderer, score_text, NULL, &score_text_rect);
     SDL_RenderPresent(renderer); // setups buffer for displaying frames
 
 }
@@ -1015,10 +1063,6 @@ void destroy_window()
 
 int main(void)
 {
-
-    //remove this 
-    //game_state = 1;
-    // reason we use app_is_running is that process/update/render will run again the initialize window function and if it fails game will stop
     app_is_running = initialize_window();   
     setup_main_menu();
     
@@ -1048,6 +1092,11 @@ int main(void)
         //    render_2_player();
             break;
         case 3: // endgame_screen 1 player
+            if (endgame_1_setup_complete == FALSE)
+            {
+                setup_1_endgame();
+                endgame_1_setup_complete = TRUE;
+            }
             inputs_endgame_1();
             update_endgame_1();
             render_endgame_1();

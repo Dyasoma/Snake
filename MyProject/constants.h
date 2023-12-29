@@ -3,7 +3,7 @@
 
 #define WINDOW_WIDTH 1000
 #define WINDOW_HEIGHT 800
-
+#define WINDOW_RATIO  (WINDOW_WIDTH/WINDOW_HEIGHT)
 
 
 
@@ -18,3 +18,5 @@
 
 #define FOOD_SIZE 15
 #define SNAKE_SIZE 15
+
+#define MENU_FONT_SIZE 60
