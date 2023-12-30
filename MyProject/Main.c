@@ -6,17 +6,7 @@
 #include <math.h>
 #include "./constants.h"
 
-//TODO
-// ADD ERROR HANDLING for all memory allocations
-// ADD SOME FORM OF MEMORY MANAGEMENT
-// 
-// 
-// fIX UP MAIN MENU
-// 
-// FIX UP END GAME MENU
-    // MAYBE ADD THE ABILITY TO START OVER?
-// 
-// ADD SELECTION FOR 1 player or 2 player snake
+ 
 
 int app_is_running = FALSE; // initially game isn't actually running, similar to flag first down
 
@@ -33,7 +23,7 @@ SDL_Surface* textSurface = NULL; // assumes address of our surface is set to nul
 TTF_Font* font = NULL;
 
 char* string_buffer = NULL; //buffer for changing scores
-char* score = NULL;
+char* score = NULL; 
 SDL_Color black_colour = { 0, 0, 0, 255 };
 SDL_Color colour = { 255, 255, 255, 255 }; // Color for our texts 
     //TTF texts
@@ -133,6 +123,13 @@ SDL_Rect selection_exit_player_rect;// rect for exit button
 //MAIN MENU INFORMATION
 
 
+//PLAYER 1 SCORE INFORMATION
+SDL_Texture* score_text_1 = NULL;// text for the score on the one player screen
+SDL_Surface* score_textSurface_1 = NULL;// surface for the score on the one player screen
+SDL_Rect score_text_rect_1;// //rect for the score on the one player screen
+//PLAYER 1 SCORE INFORMATION
+
+
 //SCORE INFORMATION
 TTF_Font* score_font = NULL;
 SDL_Texture* score_text = NULL;// exit button text
@@ -144,7 +141,7 @@ SDL_Rect score_text_rect;// rect for exit button
 //ENDGAME SCREEN
 char* final_score = NULL;
 
-//
+//ENDGAME SCREEN
 
 
 
@@ -253,30 +250,18 @@ void setup_main_menu() {
     background.width = WINDOW_WIDTH;
     background.height = WINDOW_HEIGHT;
     //main menu
+
     //selection_1_player_box
     selection_1_player_box.x = WINDOW_WIDTH * 0.25;
     selection_1_player_box.y = WINDOW_HEIGHT * 0.375;
-    selection_1_player_box.width = WINDOW_WIDTH * 0.50;
-    selection_1_player_box.height = WINDOW_HEIGHT * 0.15;
-    selection_1_player_box.color.red = 255;
-    selection_1_player_box.color.green = 255;
-    selection_1_player_box.color.blue = 255;
+
     //selection_2_player_box;
     selection_2_player_box.x = WINDOW_WIDTH * 0.25;
     selection_2_player_box.y = WINDOW_HEIGHT * 0.15 + WINDOW_HEIGHT * 0.375 + WINDOW_HEIGHT * 0.1;
-    selection_2_player_box.width = WINDOW_WIDTH * 0.50;
-    selection_2_player_box.height = WINDOW_HEIGHT * 0.15;
-    selection_2_player_box.color.red = 255;
-    selection_2_player_box.color.green = 255;
-    selection_2_player_box.color.blue = 255;
-    //selection_exit_box;
-    selection_exit_box.x = WINDOW_WIDTH - 50;
-    selection_exit_box.y = 0;
-    selection_exit_box.width = 50;
-    selection_exit_box.height = 50;
-    selection_exit_box.color.red = 255;
-    selection_exit_box.color.green = 255;
-    selection_exit_box.color.blue = 255;
+
+
+
+
     //main menu
 
 
@@ -289,7 +274,7 @@ void setup_main_menu() {
     {
         fprintf(stderr, "Error on opening font\n");
         printf(SDL_GetError());
-        return FALSE;
+        exit(1);
     }
     menu_textSurface_1 = TTF_RenderText_Shaded(menu_font, "1 PLAYER MODE", black_colour, colour);
         //Error handling for text surface
@@ -297,7 +282,7 @@ void setup_main_menu() {
     {
         fprintf(stderr, "Error on creating textSurface\n");
         printf(SDL_GetError());
-        return FALSE;
+        exit(1);
     }
 
     menu_text_1 = SDL_CreateTextureFromSurface(renderer, menu_textSurface_1);
@@ -306,7 +291,7 @@ void setup_main_menu() {
     {
         fprintf(stderr, "Error on creating text\n");
         printf(SDL_GetError());
-        return FALSE;
+        exit(1);
     }
     selection_1_player_rect.x = selection_1_player_box.x;
     selection_1_player_rect.y = selection_1_player_box.y;
@@ -323,7 +308,7 @@ void setup_main_menu() {
     {
         fprintf(stderr, "Error on creating textSurface\n");
         printf(SDL_GetError());
-        return FALSE;
+        exit(1);
     }
 
     menu_text_2 = SDL_CreateTextureFromSurface(renderer, menu_textSurface_2);
@@ -332,7 +317,7 @@ void setup_main_menu() {
     {
         fprintf(stderr, "Error on creating text\n");
         printf(SDL_GetError());
-        return FALSE;
+        exit(1);
     }
     selection_2_player_rect.x = selection_2_player_box.x;
     selection_2_player_rect.y = selection_2_player_box.y;
@@ -349,7 +334,7 @@ void setup_main_menu() {
     {
         fprintf(stderr, "Error on creating textSurface\n");
         printf(SDL_GetError());
-        return FALSE;
+        exit(1);
     }
     menu_text_exit = SDL_CreateTextureFromSurface(renderer, menu_textSurface_exit);
         //Error handling for text
@@ -357,16 +342,15 @@ void setup_main_menu() {
     {
         fprintf(stderr, "Error on creating text\n");
         printf(SDL_GetError());
-        return FALSE;
+        exit(1);
     }
-    selection_exit_player_rect.x = selection_exit_box.x;
-    selection_exit_player_rect.y = selection_exit_box.y;
         if (SDL_QueryTexture(menu_text_exit, NULL, NULL, &selection_exit_player_rect.w, &selection_exit_player_rect.h) != 0)
     {
         printf(SDL_GetError());
         exit(1);
     }
-        // strectches texture
+
+        // strectches exit texture
         selection_exit_player_rect.x = WINDOW_WIDTH - WINDOW_WIDTH * 0.05;
         selection_exit_player_rect.y = 0;
         selection_exit_player_rect.w = WINDOW_WIDTH * 0.05;
@@ -390,14 +374,19 @@ void setup_1_player() {
     srand(time((NULL))); // used to set the seed for rand based on current time
     // handles creating score string, located here because our first text and textSurfaces need some text to display
         // Turns out we don't need to place it in initialization function instead we just put "Score 000" in text function
-    char* transient_string = "Score 000";
-    for (int i = 0; i < strlen(transient_string) + 1; i++)
+    char* transient_string = "Score 000"; // don't need to free as we didn't allocate memory dynamically
+    int k = strlen(transient_string);
+    for (int i = 0; i < k + 1; i++)
     {
         score[i] = transient_string[i];
     }
     string_buffer = malloc(sizeof(char) * 4);
-
-
+    if (string_buffer == NULL)
+    {
+        fprintf(stderr, "error allocating memory");
+        exit(1);
+    }
+    string_buffer[3] = '\0';
 
     //sets food to white
     food.color.red = 255;
@@ -432,27 +421,54 @@ void setup_1_player() {
     }
 
     temp->next = NULL;
-
     snake_node = temp;
 
+    //have tempt point to nothing since we're done with it
     temp = NULL;
+
+
+
+    //remove bottom?
+    score_textSurface_1 = TTF_RenderText_Shaded(font, score, black_colour, colour);
+    score_text_1 = SDL_CreateTextureFromSurface(renderer, score_textSurface_1);
+
+    if (SDL_QueryTexture(score_text_1, NULL, NULL, &score_text_rect_1.w, &score_text_rect_1.h) != 0)
+    {
+        printf(SDL_GetError());
+        exit(1);
+    }
+    score_text_rect_1.x = WINDOW_WIDTH * 0.5 - (score_text_rect_1.w * 0.5);
+    score_text_rect_1.y = 0;
+
+
+
+
+
 }
 void setup_1_endgame()
 {
 
     char* endgame_message = "FINAL SCORE: 000";
 
-    final_score = malloc(sizeof(char) * (strlen(endgame_message) + 1));
+    int message_len = strlen(endgame_message);
+
+
+    final_score = malloc(sizeof(char) * (message_len + 1));
     if (final_score == NULL)
     {
         fprintf(stderr, "error on allocating memory\n");
         exit(1);
     }
 
-    for (int i = 0; i < strlen(endgame_message) + 1; i++)
+    for (int i = 0; i < message_len + 1; i++)
     {
         final_score[i] = endgame_message[i];
     }
+
+
+
+
+
 
 
     int size = strlen(string_buffer);
@@ -465,6 +481,13 @@ void setup_1_endgame()
     }
 
 
+    // should be done with final_score and string_buffer
+
+    //for (int i = 0; i < j; i++)
+    //{
+    //    free((final_score + i));
+    //}
+
 
     //string_buffer
 
@@ -475,7 +498,7 @@ void setup_1_endgame()
     {
         fprintf(stderr, "Error on opening font\n");
         printf(SDL_GetError());
-        return FALSE;
+        exit(1);
     }
     score_textSurface = TTF_RenderText_Solid(score_font, final_score, colour);
     //Error handling for text surface
@@ -483,7 +506,7 @@ void setup_1_endgame()
     {
         fprintf(stderr, "Error on creating textSurface\n");
         printf(SDL_GetError());
-        return FALSE;
+        exit(1);
     }
     score_text = SDL_CreateTextureFromSurface(renderer, score_textSurface);
     //Error handling for text
@@ -491,12 +514,9 @@ void setup_1_endgame()
     {
         fprintf(stderr, "Error on creating text\n");
         printf(SDL_GetError());
-        return FALSE;
+        exit(1);
     }
     // below handles the text
-
- 
-  
     if (SDL_QueryTexture(text, NULL, NULL, &score_text_rect.w, &score_text_rect.h) != 0)
     {
         printf(SDL_GetError());
@@ -510,8 +530,6 @@ void setup_1_endgame()
     score_text_rect.x = WINDOW_WIDTH * 0.50 - (score_text_rect.w * 0.5);
     score_text_rect.y = WINDOW_HEIGHT * 0.50 - (score_text_rect.h * 0.5);
 }
-
-
 
 //game state loops
 
@@ -556,10 +574,10 @@ void update_main_menu()
         left_click = FALSE;
     }
     //handles selecting second box ~~ currently just acts as an exit
-    if ((mouse_pos_x > selection_2_player_box.x)
-        && (mouse_pos_x < selection_2_player_box.x + selection_2_player_box.width)
-        && mouse_pos_y > selection_2_player_box.y
-        && (mouse_pos_y < selection_2_player_box.y + selection_2_player_box.height)
+    if ((mouse_pos_x > selection_2_player_rect.x)
+        && (mouse_pos_x < selection_2_player_rect.x + selection_2_player_rect.w)
+        && mouse_pos_y > selection_2_player_rect.y
+        && (mouse_pos_y < selection_2_player_rect.y + selection_2_player_rect.h)
         && left_click == TRUE)
     {
         game_state = 2;
@@ -739,6 +757,10 @@ void update_1_player()
         // Loop will continue until they match.
         //  while (!SDL_TICKS_PASSED(SDL_GetTicks(), last_frame_time + FRAME_TARGET_TIME));
 
+
+       
+
+
             //while loop cpu heavy, so we use SDL_Delay
 
         int time_to_wait = (FRAME_TARGET_TIME - (SDL_GetTicks() - last_frame_time));
@@ -810,8 +832,6 @@ void update_1_player()
             food_counter++;
 
 
-
-            //itoa(food_counter, string_buffer, 10);
             snprintf(string_buffer, 10, "%d", food_counter);
             int size = strlen(string_buffer);
             int j = strlen(score);
@@ -820,6 +840,27 @@ void update_1_player()
             {
                 score[j - 1 - i] = string_buffer[k - 1 - i];
             }
+
+
+            //SDL_DestroyTexture(score_text_1);
+            //SDL_FreeSurface(score_textSurface_1);
+
+
+            //handles changing scoreboard
+            score_textSurface_1 = TTF_RenderText_Shaded(font, score, black_colour, colour);
+            score_text_1 = SDL_CreateTextureFromSurface(renderer, score_textSurface_1);
+            if (SDL_QueryTexture(score_text_1, NULL, NULL, &score_text_rect_1.w, &score_text_rect_1.h) != 0)
+            {
+                printf(SDL_GetError());
+                exit(1);
+            }
+            score_text_rect_1.x = WINDOW_WIDTH * 0.5 - (score_text_rect_1.w * 0.5);
+            score_text_rect_1.y = 0;
+            //handles changing scoreboard
+
+
+
+
             // handles linked list stuff for our data structure
             node* temp = malloc(sizeof(node));
 
@@ -858,16 +899,12 @@ void update_1_player()
             }
         }
     }
-    
-
 }
 void render_1_player()
 {
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
-
-
 
     SDL_Rect background_rect =
     {
@@ -927,23 +964,11 @@ void render_1_player()
     SDL_SetRenderDrawColor(renderer, food.color.red, food.color.green, food.color.blue, 255);
     SDL_RenderFillRect(renderer, (&food_rect));
 
+
     // below handles the text
-    SDL_Colour black_color = { 0, 0, 0, 255 };
-    //textSurface = TTF_RenderText_Solid(font, score, colour);
-    //remove bottom?
-    textSurface = TTF_RenderText_Shaded(font, score, black_color, colour);
-    text = SDL_CreateTextureFromSurface(renderer, textSurface);
-    SDL_Rect text_rect;
 
-    if (SDL_QueryTexture(text, NULL, NULL, &text_rect.w, &text_rect.h) != 0)
-    {
-        printf(SDL_GetError());
-        exit(1);
-    }
-    text_rect.x = WINDOW_WIDTH *0.5 - (text_rect.w * 0.5);
-    text_rect.y = 0;
-    SDL_RenderCopy(renderer, text, NULL, &text_rect);
-
+    //renders the score_text_1 for single player score display
+    SDL_RenderCopy(renderer, score_text_1, NULL, &score_text_rect_1);
 
     //renders the exit button
     SDL_RenderCopy(renderer, menu_text_exit, NULL, &selection_exit_player_rect);
@@ -992,13 +1017,6 @@ void update_endgame_1()
         app_is_running = FALSE;
         left_click = FALSE;
     }
-
-
-
-
-
-
-
 }
 void render_endgame_1()
 {
@@ -1027,8 +1045,67 @@ void render_endgame_1()
 //game state loops
 
 
+
+
+//destroys
 void destroy_window()
 {
+    
+
+    SDL_DestroyTexture(score_font);
+    SDL_FreeSurface(score_textSurface);
+
+    SDL_DestroyTexture(menu_text_exit);
+    SDL_FreeSurface(menu_textSurface_exit);
+
+    SDL_DestroyTexture(menu_text_2);
+    SDL_FreeSurface(menu_textSurface_2);
+
+    SDL_DestroyTexture(menu_text_1);
+    SDL_FreeSurface(menu_textSurface_1);
+
+
+    TTF_CloseFont(score_font);
+
+    TTF_CloseFont(menu_font);
+
+
+
+
+    // 
+    // Below destroys linked list for snake data structure
+    if (snake_node == NULL)
+    {
+
+    }
+    else
+    {
+       // node* destroyer = malloc(sizeof(node));
+        node* destroyer = NULL;
+        while (snake_node->next != NULL)
+        {
+            destroyer = snake_node;
+            snake_node = snake_node->next;
+            free(destroyer);
+        }
+        // technically not needed I just like to be safe
+            //free(snake_node);
+
+    }
+
+    if (score != NULL)
+    {
+        int j = strlen(score); // add one since we want to also free the nul character
+    }
+    if (string_buffer != NULL)
+    {
+    int k = strlen(string_buffer); // add one since we want to also free the nul character
+    }
+
+
+    free(score);
+    free(final_score);
+    free(string_buffer);
 
     SDL_DestroyTexture(text);
     SDL_FreeSurface(textSurface);
@@ -1038,25 +1115,11 @@ void destroy_window()
     TTF_Quit();
     SDL_Quit();
     // *** NOTE WE DESTORY IN THE REVERSE ORDER WE CREATED, Don't want to orphan any pointers
-    // 
-    // Below destroys linked list for snake data structure
-    if (snake_node == NULL)
-    {
 
-    }
-    else 
-    {
-    while (snake_node->next != NULL)
-    {
-        node* destroyer = snake_node;
-        snake_node = snake_node->next;
-        free(destroyer);
-    }
-    free(snake_node);
-    }
-    free(score);
-    free(string_buffer);
+
     // Final step is to clear all out pointers
+    score_font = score_textSurface = menu_textSurface_1 = menu_textSurface_2 = menu_textSurface_exit
+        = menu_text_1 = menu_text_2 = menu_text_exit = score = string_buffer = NULL;
     text = textSurface = font = renderer = window = NULL;
 }
 
@@ -1074,6 +1137,7 @@ int main(void)
             inputs_main_menu();
             update_main_menu();
             render_main_menu();
+            //destroy_main_menu(); ?
             break;
         case 1: // 1-player
             if (game_1_setup_complete == FALSE)
@@ -1091,7 +1155,7 @@ int main(void)
         //    update_2_player();
         //    render_2_player();
             break;
-        case 3: // endgame_screen 1 player
+        case 3: // endgame screen 1 player
             if (endgame_1_setup_complete == FALSE)
             {
                 setup_1_endgame();
@@ -1100,7 +1164,7 @@ int main(void)
             inputs_endgame_1();
             update_endgame_1();
             render_endgame_1();
-        //    break;
+            break;
         //case 4: // endgame_screen 2 player
         //    inputs_endgame_2();
         //    update_endgame_2();
