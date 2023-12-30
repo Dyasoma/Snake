@@ -1052,7 +1052,7 @@ void destroy_window()
 {
     
 
-    SDL_DestroyTexture(score_font);
+    SDL_DestroyTexture(score_text);
     SDL_FreeSurface(score_textSurface);
 
     SDL_DestroyTexture(menu_text_exit);
