@@ -1,5 +1,5 @@
 # SNAKE APPLICATION/GAME USING C, SDL & TTF
-#### Video Demo:  <URL HERE>
+#### Video Demo:  https://youtu.be/vwO301mg-6k
 #### Description:
 Snake game made using C, SDL & TTF, SDL was used for graphics, TTF was for fonts and coded the everything else in C. I used youtube to find out how to create a game loop then designed a main menu, a single player mode, exit button and endgame screen. Originally wanted to create a 2 player mode but really wanted to finish before the end of the year so by selecting 2 player mode it simply exits the application. :( Otherwise I am pretty happy about finishing the application. Handling memory was annoying but in the end I finished it.
 
